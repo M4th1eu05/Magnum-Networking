@@ -19,9 +19,11 @@ find_package(Bullet REQUIRED Dynamics)
 set_directory_properties(PROPERTIES CORRADE_USE_PEDANTIC_FLAGS ON)
 
 add_executable(MagnumBootstrap
-        src/main.cpp)
+        src/BulletExample.cpp)
 
-target_include_directories(MagnumBootstrap PUBLIC inc)
+
+
+target_include_directories(MagnumBootstrap PUBLIC inc inc/components)
 set_property(TARGET MagnumBootstrap PROPERTY CXX_STANDARD 20)
 target_link_libraries(MagnumBootstrap PRIVATE
         Magnum::Application
