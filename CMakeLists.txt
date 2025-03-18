@@ -40,4 +40,6 @@ target_link_libraries(MagnumBootstrap PRIVATE
         BulletDynamics
         BulletCollision
         LinearMath
-        Bullet3Common)
+        Bullet3Common
+        nlohmann_json
+)

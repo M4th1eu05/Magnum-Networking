@@ -55,6 +55,7 @@
 #include <Magnum/SceneGraph/Scene.h>
 #include <Magnum/Shaders/PhongGL.h>
 #include <Magnum/Trade/MeshData.h>
+#include <imgui.h>
 
 #ifdef BT_USE_DOUBLE_PRECISION
 #error sorry, this example does not support Bullet with double precision enabled
@@ -73,6 +74,10 @@ namespace Magnum {
             Color3 color;
         };
 
+        struct Cube {
+            Magnum::Vector3 position;
+        };
+
         class BulletExample : public Platform::Application {
         public:
             explicit BulletExample(const Arguments &arguments);
@@ -83,6 +88,8 @@ namespace Magnum {
             void keyPressEvent(KeyEvent &event) override;
 
             void pointerPressEvent(PointerEvent &event) override;
+
+            void drawUI();
 
             GL::Mesh _box{NoCreate}, _sphere{NoCreate};
             GL::Buffer _boxInstanceBuffer{NoCreate}, _sphereInstanceBuffer{NoCreate};
@@ -111,6 +118,8 @@ namespace Magnum {
             btBoxShape _bGroundShape{{4.0f, 0.5f, 4.0f}};
 
             bool _drawCubes{true}, _drawDebug{true}, _shootBox{true};
+
+            std::vector<Cube> _cubes; // Liste des cubes de la scène
         };
 
         class ColoredDrawable : public SceneGraph::Drawable3D {
@@ -319,6 +328,29 @@ namespace Magnum {
             swapBuffers();
             _timeline.nextFrame();
             redraw();
+        }
+
+        void BulletExample::drawUI() {
+            ImGui::Begin("Éditeur de scène");
+
+            if(ImGui::Button("Ajouter un cube")) {
+                _cubes.push_back({Magnum::Vector3(0.0f, 0.0f, 10.0f)});
+            }
+
+            for(int i = 0; i < _cubes.size(); ++i) {
+                ImGui::PushID(i);
+                ImGui::InputFloat3("Position", &_cubes[i].position[0]);
+                if(ImGui::Button("Supprimer")) {
+                    _cubes.erase(_cubes.begin() + i);
+                }
+                ImGui::PopID();
+            }
+
+            if(ImGui::Button("Sauvegarder la scène")) {
+                //saveScene("scene.json"); ""faire un fichier json pour charger la scene""
+            }
+
+            ImGui::End();
         }
 
         void BulletExample::keyPressEvent(KeyEvent &event) {
