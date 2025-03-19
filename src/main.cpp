@@ -25,7 +25,10 @@
 #include <Magnum/Trade/MeshData.h>
 #include <imgui.h>
 #include <fstream>
+#include <World.h>
 #include <nlohmann/json.hpp>
+
+#include "Rigidbody.h"
 
 using namespace Magnum;
 using namespace Math::Literals;
@@ -64,7 +67,6 @@ namespace Game {
         GL::Mesh _box{NoCreate}, _sphere{NoCreate};
         GL::Buffer _boxInstanceBuffer{NoCreate}, _sphereInstanceBuffer{NoCreate};
         Shaders::PhongGL _shader{NoCreate};
-        BulletIntegration::DebugDraw _debugDraw{NoCreate};
         Containers::Array<InstanceData> _boxInstanceData, _sphereInstanceData;
 
         btDbvtBroadphase _bBroadphase;
@@ -72,16 +74,11 @@ namespace Game {
         btCollisionDispatcher _bDispatcher{&_bCollisionConfig};
         btSequentialImpulseConstraintSolver _bSolver;
 
-        /* The world has to live longer than the scene because RigidBody
-           instances have to remove themselves from it on destruction */
-        btDiscreteDynamicsWorld _bWorld{&_bDispatcher, &_bBroadphase, &_bSolver, &_bCollisionConfig};
-
-        Scene3D _scene;
         SceneGraph::Camera3D *_camera;
         SceneGraph::DrawableGroup3D _drawables;
         Timeline _timeline;
 
-        Object3D *_cameraRig, *_cameraObject;
+        std::shared_ptr<GameObject>_cameraRig, _cameraObject;
 
         btBoxShape _bBoxShape{{0.5f, 0.5f, 0.5f}};
         btSphereShape _bSphereShape{0.25f};
@@ -92,7 +89,7 @@ namespace Game {
         float _cameraRotationSpeed{0.01f};
         float _cameraMoveSpeed{0.1f};
 
-        std::vector<Cube> _cubes; // Liste des cubes de la scène
+        std::shared_ptr<World> _world;
     };
 
     class ColoredDrawable : public SceneGraph::Drawable3D {
@@ -119,48 +116,13 @@ namespace Game {
         Matrix4 _primitiveTransformation;
     };
 
-    class RigidBody : public Object3D {
-    public:
-        RigidBody(Object3D *parent, Float mass, btCollisionShape *bShape,
-                  btDynamicsWorld &bWorld): Object3D{parent}, _bWorld(bWorld) {
-            /* Calculate inertia so the object reacts as it should with
-               rotation and everything */
-            btVector3 bInertia(0.0f, 0.0f, 0.0f);
-            if (!Math::TypeTraits<Float>::equals(mass, 0.0f))
-                bShape->calculateLocalInertia(mass, bInertia);
-
-            /* Bullet rigid body setup */
-            auto *motionState = new BulletIntegration::MotionState{*this};
-            _bRigidBody.emplace(btRigidBody::btRigidBodyConstructionInfo{
-                mass, &motionState->btMotionState(), bShape, bInertia
-            });
-            _bRigidBody->forceActivationState(DISABLE_DEACTIVATION);
-            bWorld.addRigidBody(_bRigidBody.get());
-        }
-
-        ~RigidBody() {
-            _bWorld.removeRigidBody(_bRigidBody.get());
-        }
-
-        btRigidBody &rigidBody() { return *_bRigidBody; }
-
-        /* needed after changing the pose from Magnum side */
-        void syncPose() {
-            _bRigidBody->setWorldTransform(btTransform(transformationMatrix()));
-        }
-
-    private:
-        btDynamicsWorld &_bWorld;
-        Containers::Pointer<btRigidBody> _bRigidBody;
-    };
-
     GameApp::GameApp(const Arguments &arguments): Platform::Application(arguments, NoCreate) {
         /* Try 8x MSAA, fall back to zero samples if not possible. Enable only 2x
            MSAA if we have enough DPI. */
         {
             const Vector2 dpiScaling = this->dpiScaling({});
             Configuration conf;
-            conf.setTitle("Game App")
+            conf.setTitle("Epik cube gaming")
                     .setSize(conf.size(), dpiScaling);
             GLConfiguration glConf;
             glConf.setSampleCount(dpiScaling.max() < 2.0f ? 8 : 2);
@@ -168,13 +130,14 @@ namespace Game {
                 create(conf, glConf.setSampleCount(0));
         }
 
+        _world = std::make_shared<World>();
         /* Camera setup */
-        (*(_cameraRig = new Object3D{&_scene}))
-                .translate(Vector3::yAxis(3.0f))
-                .rotateY(40.0_degf);
-        (*(_cameraObject = new Object3D{_cameraRig}))
-                .translate(Vector3::zAxis(20.0f))
-                .rotateX(-25.0_degf);
+        _cameraRig = _world->createGameObject();
+        _cameraRig->translate(Vector3::yAxis(3.0f)).rotateY(40.0_degf);
+
+        _cameraObject = _world->createGameObject(_cameraRig);
+        _cameraObject->translate(Vector3::zAxis(20.0f)).rotateX(-25.0_degf);
+
         (_camera = new SceneGraph::Camera3D(*_cameraObject))
                 ->setAspectRatioPolicy(SceneGraph::AspectRatioPolicy::Extend)
                 .setProjectionMatrix(Matrix4::perspectiveProjection(35.0_degf, 1.0f, 0.1f, 1000.0f))
@@ -212,13 +175,14 @@ namespace Game {
         GL::Renderer::setPolygonOffset(2.0f, 0.5f);
 
         /* Bullet setup */
-        _debugDraw = BulletIntegration::DebugDraw{};
-        _debugDraw.setMode(BulletIntegration::DebugDraw::Mode::DrawWireframe);
-        _bWorld.setGravity({0.0f, -10.0f, 0.0f});
-        _bWorld.setDebugDrawer(&_debugDraw);
+        _world->_debugDraw = BulletIntegration::DebugDraw{};
+        _world->_debugDraw.setMode(BulletIntegration::DebugDraw::Mode::DrawWireframe);
 
         /* Create the ground */
-        auto *ground = new RigidBody{&_scene, 0.0f, &_bGroundShape, _bWorld};
+        //auto *ground = new RigidBody{&_scene, 0.0f, &_bGroundShape, _bWorld};
+        const std::shared_ptr<GameObject> ground = _world->createGameObject();
+        ground->addComponent<Rigidbody>(0.0f, &_bGroundShape, _world);
+
         new ColoredDrawable{
             *ground, _boxInstanceData, 0xffffff_rgbf,
             Matrix4::scaling({100.0f, 0.5f, 100.0f}), _drawables
@@ -229,11 +193,12 @@ namespace Game {
         for (Int i = 0; i != 10; ++i) {
             for (Int j = 0; j != 10; ++j) {
                 for (Int k = 0; k != 5; ++k) {
-                    auto *o = new RigidBody{&_scene, 1.0f, &_bBoxShape, _bWorld};
-                    o->translate({i + 1.0f , j + 5.0f, k + 1.0f});
-                    o->syncPose();
+                    const std::shared_ptr<GameObject> newBox = _world->createGameObject();
+                    auto rb = newBox->addComponent<Rigidbody>(1.0f, &_bGroundShape, _world);
+                    newBox->translate({i + 1.0f , j + 5.0f, k + 1.0f});
+                    rb->syncPose();
                     new ColoredDrawable{
-                        *o, _boxInstanceData,
+                        *newBox, _boxInstanceData,
                         Color3::fromHsv({hue += 137.5_degf, 0.75f, 0.9f}),
                         Matrix4::scaling(Vector3{0.5f}), _drawables
                     };
@@ -251,6 +216,7 @@ namespace Game {
         GL::defaultFramebuffer.clear(GL::FramebufferClear::Color | GL::FramebufferClear::Depth);
 
         /* Housekeeping: remove any objects which are far away from the origin */
+        /*
         for (Object3D *obj = _scene.children().first(); obj;) {
             Object3D *next = obj->nextSibling();
             if (obj->transformation().translation().dot() > 100 * 100)
@@ -258,9 +224,10 @@ namespace Game {
 
             obj = next;
         }
+        */
 
         /* Step bullet simulation */
-        _bWorld.stepSimulation(_timeline.previousFrameDuration(), 5);
+        _world->update();
 
         if (_drawCubes) {
             /* Populate instance data with transformations and colors */
@@ -290,9 +257,9 @@ namespace Game {
             if (_drawCubes)
                 GL::Renderer::setDepthFunction(GL::Renderer::DepthFunction::LessOrEqual);
 
-            _debugDraw.setTransformationProjectionMatrix(
+            _world->_debugDraw.setTransformationProjectionMatrix(
                 _camera->projectionMatrix() * _camera->cameraMatrix());
-            _bWorld.debugDrawWorld();
+            _world->getBulletWorld().debugDrawWorld();
 
             if (_drawCubes)
                 GL::Renderer::setDepthFunction(GL::Renderer::DepthFunction::Less);
@@ -306,6 +273,7 @@ namespace Game {
     void GameApp::drawUI() {
         ImGui::Begin("Éditeur de scène");
 
+        /*
         if(ImGui::Button("Ajouter un cube")) {
             _cubes.push_back({Magnum::Vector3(0.0f, 0.0f, 10.0f)});
         }
@@ -322,7 +290,7 @@ namespace Game {
         if(ImGui::Button("Sauvegarder la scène")) {
             //saveScene("scene.json"); ""faire un fichier json pour charger la scene""
         }
-
+        */
         ImGui::End();
     }
 
@@ -370,7 +338,7 @@ namespace Game {
             _cameraObject->translate(Vector3::yAxis(_cameraMoveSpeed));
 
             /* Toggling draw modes */
-        } else if (event.key() == Key::D) {
+        } else if (event.key() == Key::R) {
             if (_drawCubes && _drawDebug) {
                 _drawDebug = false;
             } else if (_drawCubes && !_drawDebug) {
@@ -406,27 +374,22 @@ namespace Game {
                                        clickPoint, -1.0f
                                    }).normalized();
 
-        auto *object = new RigidBody{
-            &_scene,
-            _shootBox ? 1.0f : 5.0f,
-            _shootBox ? static_cast<btCollisionShape *>(&_bBoxShape) : &_bSphereShape,
-            _bWorld
-        };
-        object->translate(_cameraObject->absoluteTransformation().translation());
-        /* Has to be done explicitly after the translate() above, as Magnum ->
-           Bullet updates are implicitly done only for kinematic bodies */
-        object->syncPose();
+        /* Create a new object */
+        auto newObject = _world->createGameObject();
+        auto rb = newObject->addComponent<Rigidbody>(_shootBox ? 1.0f : 5.0f, _shootBox ? static_cast<btCollisionShape *>(&_bBoxShape) : &_bSphereShape, _world);
+        newObject->translate(_cameraObject->absoluteTransformation().translation());
+        rb->syncPose();
 
         /* Create either a box or a sphere */
         new ColoredDrawable{
-            *object,
+            *newObject,
             _shootBox ? _boxInstanceData : _sphereInstanceData,
             _shootBox ? 0x880000_rgbf : 0x220000_rgbf,
             Matrix4::scaling(Vector3{_shootBox ? 0.5f : 0.25f}), _drawables
         };
 
         /* Give it an initial velocity */
-        object->rigidBody().setLinearVelocity(btVector3{direction * 25.f});
+        rb->rigidBody().setLinearVelocity(btVector3{direction * 25.f});
 
         event.setAccepted();
     }

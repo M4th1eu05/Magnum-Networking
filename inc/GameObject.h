@@ -30,7 +30,7 @@ public:
     template<typename T, typename... Args>
     std::shared_ptr<T> addComponent(Args&&... args) {
         static_assert(std::is_base_of_v<BaseComponent, T>, "T must be derived from BaseComponent");
-        auto component = std::make_shared<T>(std::forward<Args>(args)...);
+        auto component = std::make_shared<T>(std::forward<Args>(args)..., shared_from_this());
         addComponentInternal(component);
         return component;
     }

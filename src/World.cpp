@@ -4,6 +4,11 @@
 
 #include "World.h"
 
+World::World() {
+    _bWorld.setGravity({0.0f, -10.0f, 0.0f});
+    _bWorld.setDebugDrawer(&_debugDraw);
+}
+
 std::shared_ptr<GameObject> World::createGameObject(std::shared_ptr<GameObject> parent) {
     std::shared_ptr<GameObject> object;
     if (!parent) {

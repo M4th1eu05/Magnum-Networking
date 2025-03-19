@@ -9,6 +9,7 @@
 #include "BulletCollision/CollisionDispatch/btDefaultCollisionConfiguration.h"
 #include "BulletDynamics/ConstraintSolver/btSequentialImpulseConstraintSolver.h"
 #include "BulletDynamics/Dynamics/btDiscreteDynamicsWorld.h"
+#include "Magnum/BulletIntegration/DebugDraw.h"
 #include "Magnum/SceneGraph/MatrixTransformation3D.h"
 #include "Magnum/SceneGraph/Scene.h"
 
@@ -17,7 +18,7 @@ typedef SceneGraph::Scene<SceneGraph::MatrixTransformation3D> Scene3D;
 
 class World {
 public:
-    World() : _scene() {}
+    World();
 
     Scene3D& getScene() { return _scene; }
 
@@ -28,6 +29,11 @@ public:
 
     void update();
 
+    btDiscreteDynamicsWorld &getBulletWorld() { return _bWorld; }
+
+public:
+    BulletIntegration::DebugDraw _debugDraw{NoCreate};
+
 private:
     Scene3D _scene;
     std::vector<std::shared_ptr<GameObject>> _objects;
@@ -37,6 +43,9 @@ private:
     btDefaultCollisionConfiguration _bCollisionConfig;
     btCollisionDispatcher _bDispatcher{&_bCollisionConfig};
     btSequentialImpulseConstraintSolver _bSolver;
+
+    /* The world has to live longer than the scene because RigidBody
+           instances have to remove themselves from it on destruction */
     btDiscreteDynamicsWorld _bWorld{&_bDispatcher, &_bBroadphase, &_bSolver, &_bCollisionConfig};
 
     float physicsTimeStep = 1.0f / 60.0f;

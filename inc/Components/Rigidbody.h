@@ -1,5 +1,7 @@
 #include <BaseComponent.h>
 #include <GameObject.h>
+#include <World.h>
+
 #include "BulletCollision/CollisionDispatch/btCollisionObject.h"
 #include "BulletCollision/CollisionShapes/btCollisionShape.h"
 #include "BulletDynamics/Dynamics/btDynamicsWorld.h"
@@ -15,8 +17,8 @@ class btRigidBody;
 
 class Rigidbody : public BaseComponent {
 public:
-    Rigidbody(const Float mass, btCollisionShape *bShape, btDynamicsWorld &bWorld, std::shared_ptr<GameObject> gameObject)
-        : BaseComponent(std::move(gameObject)), _bWorld(bWorld) {
+    Rigidbody(const Float mass, btCollisionShape *bShape, const std::shared_ptr<World> &world, std::shared_ptr<GameObject> gameObject)
+        : BaseComponent(std::move(gameObject)), _bWorld(world->getBulletWorld()) {
         /* Calculate inertia so the object reacts as it should with rotation and everything */
         btVector3 bInertia(0.0f, 0.0f, 0.0f);
         if (!Math::TypeTraits<Float>::equals(mass, 0.0f))
@@ -28,7 +30,7 @@ public:
             mass, &motionState->btMotionState(), bShape, bInertia
         });
         _bRigidBody->forceActivationState(DISABLE_DEACTIVATION);
-        bWorld.addRigidBody(_bRigidBody.get());
+        _bWorld.addRigidBody(_bRigidBody.get());
     }
 
     ~Rigidbody() {
