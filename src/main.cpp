@@ -43,10 +43,6 @@ namespace Game {
         Color3 color;
     };
 
-    struct Cube {
-        Magnum::Vector3 position;
-    };
-
     class GameApp : public Platform::Application {
     public:
         virtual ~GameApp() = default;
@@ -268,57 +264,6 @@ namespace Game {
         swapBuffers();
         _timeline.nextFrame();
         redraw();
-    }
-
-    void GameApp::drawUI() {
-        ImGui::Begin("Éditeur de scène");
-
-        /*
-        if(ImGui::Button("Ajouter un cube")) {
-            _cubes.push_back({Magnum::Vector3(0.0f, 0.0f, 10.0f)});
-        }
-
-        for(int i = 0; i < _cubes.size(); ++i) {
-            ImGui::PushID(i);
-            ImGui::InputFloat3("Position", &_cubes[i].position[0]);
-            if(ImGui::Button("Supprimer")) {
-                _cubes.erase(_cubes.begin() + i);
-            }
-            ImGui::PopID();
-        }
-
-        if(ImGui::Button("Sauvegarder la scène")) {
-            //saveScene("scene.json"); ""faire un fichier json pour charger la scene""
-        }
-        */
-        ImGui::End();
-    }
-
-    void createDefaultSceneFile(const std::string& filename) {
-        nlohmann::json scene;
-        scene["cubes"] = {
-            {{"x", 0.0}, {"y", 0.0}, {"z", 0.0}},
-            {{"x", 1.0}, {"y", 0.0}, {"z", 0.0}}
-        };
-
-        std::ofstream file(filename);
-        if (file) {
-            file << scene.dump(4); // Écrit en format JSON avec indentation
-            file.close();
-        }
-    }
-
-    void loadScene(const std::string& filename) { //a appeler au lancement du jeu
-        std::ifstream file(filename);
-        if (!file) return;
-
-        nlohmann::json scene;
-        file >> scene;
-
-        //cubes.clear();
-        for (const auto& cubeData : scene["cubes"]) {
-            //cubes.push_back({{cubeData["x"], cubeData["y"], cubeData["z"]}});
-        }
     }
 
 

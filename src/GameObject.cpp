@@ -15,8 +15,6 @@ void GameObject::start() {
 
 void GameObject::update()
 {
-    auto translation = transformation().translation();
-    //std::cout << "Object position: x=" << translation.x() << ", y=" << translation.y() << ", z=" << translation.z() << std::endl;
 
     for (std::shared_ptr<BaseComponent>& component : components) {
         component->update();
