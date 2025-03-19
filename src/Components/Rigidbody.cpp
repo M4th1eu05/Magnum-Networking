@@ -20,7 +20,6 @@ Rigidbody::Rigidbody(const Float mass, btCollisionShape *bShape, const std::shar
     });
     _bRigidBody->forceActivationState(DISABLE_DEACTIVATION);
     _bWorld.addRigidBody(_bRigidBody.get());
-    std::cout << "Rigidbody created" << std::endl;
 }
 
 Rigidbody::~Rigidbody() {
