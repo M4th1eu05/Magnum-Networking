@@ -4,6 +4,4 @@ FetchContent_Declare(
   GIT_TAG        master
 )
 
-
-
 FetchContent_MakeAvailable(magnum)

@@ -11,8 +11,8 @@ set(MAGNUM_WITH_BULLET ON CACHE BOOL "" FORCE)
 set(MAGNUM_WITH_IMGUI ON CACHE BOOL "" FORCE)
 
 add_subdirectory(bullet)
-
 add_subdirectory(corrade)
 add_subdirectory(magnum)
 add_subdirectory(magnum-integration)
 add_subdirectory(nlohmannjson)
+add_subdirectory(imgui)

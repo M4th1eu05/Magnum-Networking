@@ -26,6 +26,7 @@
 #include <imgui.h>
 #include <fstream>
 #include <nlohmann/json.hpp>
+#include <Magnum/ImGuiIntegration/Context.hpp>
 
 using namespace Magnum;
 using namespace Math::Literals;
@@ -99,6 +100,7 @@ namespace Game {
         float _cameraMoveSpeed{0.1f};
 
         std::vector<Cube> _cubes; // Liste des cubes de la scène
+        ImGuiIntegration::Context _imgui{NoCreate};
     };
 
     class ColoredDrawable : public SceneGraph::Drawable3D {
@@ -251,6 +253,13 @@ namespace Game {
         setSwapInterval(1);
         setMinimalLoopPeriod(16.0_msec);
         _timeline.start();
+        _imgui = ImGuiIntegration::Context(Vector2{windowSize()}/dpiScaling(),
+        windowSize(), framebufferSize());
+
+        GL::Renderer::setBlendEquation(GL::Renderer::BlendEquation::Add,
+        GL::Renderer::BlendEquation::Add);
+        GL::Renderer::setBlendFunction(GL::Renderer::BlendFunction::SourceAlpha,
+        GL::Renderer::BlendFunction::OneMinusSourceAlpha);
     }
 
     void GameApp::drawEvent() {
@@ -304,12 +313,17 @@ namespace Game {
                 GL::Renderer::setDepthFunction(GL::Renderer::DepthFunction::Less);
         }
 
+        drawUI();
         swapBuffers();
         _timeline.nextFrame();
         redraw();
+
+
     }
 
     void GameApp::drawUI() {
+        _imgui.newFrame();
+
         ImGui::Begin("Scene Editor");
 
         if(ImGui::Button("Add a cube")) {
@@ -330,6 +344,20 @@ namespace Game {
         }
 
         ImGui::End();
+
+        _imgui.updateApplicationCursor(*this);
+
+        GL::Renderer::enable(GL::Renderer::Feature::Blending);
+        GL::Renderer::enable(GL::Renderer::Feature::ScissorTest);
+        GL::Renderer::disable(GL::Renderer::Feature::FaceCulling);
+        GL::Renderer::disable(GL::Renderer::Feature::DepthTest);
+
+        _imgui.drawFrame();
+
+        GL::Renderer::enable(GL::Renderer::Feature::DepthTest);
+        GL::Renderer::enable(GL::Renderer::Feature::FaceCulling);
+        GL::Renderer::disable(GL::Renderer::Feature::ScissorTest);
+        GL::Renderer::disable(GL::Renderer::Feature::Blending);
     }
 
     void GameApp::createDefaultSceneFile(const std::string &filename) {
