@@ -19,13 +19,42 @@ find_package(Bullet REQUIRED Dynamics)
 set_directory_properties(PROPERTIES CORRADE_USE_PEDANTIC_FLAGS ON)
 
 add_executable(MagnumBootstrap
-        src/main.cpp)
+        src/main.cpp
+        src/World.cpp
+        src/GameObject.cpp
+        src/Components/BaseComponent.cpp
+        inc/ILifeCycle.h
+        src/Components/Rigidbody.cpp
+        inc/Components/Rigidbody.h)
 
 
 
-target_include_directories(MagnumBootstrap PUBLIC inc inc/components)
+target_include_directories(MagnumBootstrap PUBLIC inc inc/Components)
+
 set_property(TARGET MagnumBootstrap PROPERTY CXX_STANDARD 20)
 target_link_libraries(MagnumBootstrap PRIVATE
+        Magnum::Application
+        Magnum::GL
+        Magnum::Magnum
+        Magnum::MeshTools
+        Magnum::Primitives
+        Magnum::SceneGraph
+        Magnum::Shaders
+        Magnum::Trade
+        MagnumIntegration::Bullet
+        Bullet::Dynamics
+        MagnumIntegration::ImGui
+        BulletDynamics
+        BulletCollision
+        LinearMath
+        Bullet3Common
+        nlohmann_json
+)
+
+
+add_executable(BulletExample src/BulletExample.cpp)
+set_property(TARGET BulletExample PROPERTY CXX_STANDARD 20)
+target_link_libraries(BulletExample PRIVATE
         Magnum::Application
         Magnum::GL
         Magnum::Magnum
