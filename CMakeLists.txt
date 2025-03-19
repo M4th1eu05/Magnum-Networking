@@ -50,3 +50,25 @@ target_link_libraries(MagnumBootstrap PRIVATE
         Bullet3Common
         nlohmann_json
 )
+
+
+add_executable(BulletExample src/BulletExample.cpp)
+set_property(TARGET BulletExample PROPERTY CXX_STANDARD 20)
+target_link_libraries(BulletExample PRIVATE
+        Magnum::Application
+        Magnum::GL
+        Magnum::Magnum
+        Magnum::MeshTools
+        Magnum::Primitives
+        Magnum::SceneGraph
+        Magnum::Shaders
+        Magnum::Trade
+        MagnumIntegration::Bullet
+        Bullet::Dynamics
+        MagnumIntegration::ImGui
+        BulletDynamics
+        BulletCollision
+        LinearMath
+        Bullet3Common
+        nlohmann_json
+)

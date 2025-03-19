@@ -18,7 +18,7 @@ typedef SceneGraph::Scene<SceneGraph::MatrixTransformation3D> Scene3D;
 
 class World {
 public:
-    World();
+    World(Magnum::Timeline& timeline);
 
     Scene3D& getScene() { return _scene; }
 
@@ -35,6 +35,8 @@ public:
     BulletIntegration::DebugDraw _debugDraw{NoCreate};
 
 private:
+    Timeline& _timeline;
+
     Scene3D _scene;
     std::vector<std::shared_ptr<GameObject>> _objects;
 

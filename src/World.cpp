@@ -4,7 +4,11 @@
 
 #include "World.h"
 
-World::World() {
+#include <iostream>
+
+#include "Magnum/Timeline.h"
+
+World::World(Timeline& timeline) : _timeline(timeline) {
     _bWorld.setGravity({0.0f, -10.0f, 0.0f});
     _bWorld.setDebugDrawer(&_debugDraw);
 }
@@ -31,9 +35,10 @@ void World::removeObject(std::shared_ptr<GameObject> object) {
 }
 
 void World::update() {
+    //std::cout << "World update called" << std::endl;
     for (std::shared_ptr<GameObject>& object : _objects) {
         object->update();
     }
 
-    _bWorld.stepSimulation(physicsTimeStep);
+    _bWorld.stepSimulation(_timeline.previousFrameDuration(), 5);
 }

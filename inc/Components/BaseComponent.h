@@ -13,9 +13,9 @@ class GameObject;
 
 class BaseComponent : public ILifeCycle {
 public:
-    explicit BaseComponent(std::shared_ptr<GameObject> gameObject) : gameObject(std::move(gameObject)) {}
+    explicit BaseComponent(std::shared_ptr<GameObject> gameObject) : gameObject(gameObject) {}
 
-    std::shared_ptr<GameObject> gameObject;
+    std::shared_ptr<GameObject> gameObject = nullptr;
 };
 
 

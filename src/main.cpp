@@ -130,7 +130,7 @@ namespace Game {
                 create(conf, glConf.setSampleCount(0));
         }
 
-        _world = std::make_shared<World>();
+        _world = std::make_shared<World>(_timeline);
         /* Camera setup */
         _cameraRig = _world->createGameObject();
         _cameraRig->translate(Vector3::yAxis(3.0f)).rotateY(40.0_degf);
@@ -194,7 +194,7 @@ namespace Game {
             for (Int j = 0; j != 10; ++j) {
                 for (Int k = 0; k != 5; ++k) {
                     const std::shared_ptr<GameObject> newBox = _world->createGameObject();
-                    auto rb = newBox->addComponent<Rigidbody>(1.0f, &_bGroundShape, _world);
+                    auto rb = newBox->addComponent<Rigidbody>(1.0f, &_bBoxShape, _world);
                     newBox->translate({i + 1.0f , j + 5.0f, k + 1.0f});
                     rb->syncPose();
                     new ColoredDrawable{
