@@ -370,7 +370,7 @@ namespace Game {
             _cameraObject->translate(Vector3::yAxis(_cameraMoveSpeed));
 
             /* Toggling draw modes */
-        } else if (event.key() == Key::D) {
+        } else if (event.key() == Key::R) {
             if (_drawCubes && _drawDebug) {
                 _drawDebug = false;
             } else if (_drawCubes && !_drawDebug) {
