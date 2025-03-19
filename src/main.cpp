@@ -53,6 +53,12 @@ namespace Game {
     private:
         void drawEvent() override;
 
+        void saveScene(const std::string& filename);
+
+        void loadScene(const std::string& filename);
+
+        void createDefaultSceneFile(const std::string& filename);
+
         void drawUI();
 
         void keyPressEvent(KeyEvent &event) override;
@@ -205,7 +211,7 @@ namespace Game {
                                          Shaders::PhongGL::NormalMatrix{},
                                          Shaders::PhongGL::Color3{});
 
-        /* Setup the renderer so we can draw the debug lines on top */
+        /* Set up the renderer so we can draw the debug lines on top */
         GL::Renderer::enable(GL::Renderer::Feature::DepthTest);
         GL::Renderer::enable(GL::Renderer::Feature::FaceCulling);
         GL::Renderer::enable(GL::Renderer::Feature::PolygonOffsetFill);
@@ -304,29 +310,29 @@ namespace Game {
     }
 
     void GameApp::drawUI() {
-        ImGui::Begin("Éditeur de scène");
+        ImGui::Begin("Scene Editor");
 
-        if(ImGui::Button("Ajouter un cube")) {
+        if(ImGui::Button("Add a cube")) {
             _cubes.push_back({Magnum::Vector3(0.0f, 0.0f, 10.0f)});
         }
 
         for(int i = 0; i < _cubes.size(); ++i) {
             ImGui::PushID(i);
             ImGui::InputFloat3("Position", &_cubes[i].position[0]);
-            if(ImGui::Button("Supprimer")) {
+            if(ImGui::Button("Delete")) {
                 _cubes.erase(_cubes.begin() + i);
             }
             ImGui::PopID();
         }
 
-        if(ImGui::Button("Sauvegarder la scène")) {
-            //saveScene("scene.json"); ""faire un fichier json pour charger la scene""
+        if(ImGui::Button("Save scene")) {
+            saveScene("scene.json");
         }
 
         ImGui::End();
     }
 
-    void createDefaultSceneFile(const std::string& filename) {
+    void GameApp::createDefaultSceneFile(const std::string &filename) {
         nlohmann::json scene;
         scene["cubes"] = {
             {{"x", 0.0}, {"y", 0.0}, {"z", 0.0}},
@@ -340,17 +346,26 @@ namespace Game {
         }
     }
 
-    void loadScene(const std::string& filename) { //a appeler au lancement du jeu
+    void GameApp::loadScene(const std::string& filename) { // TODO: a appeler au lancement du jeu
         std::ifstream file(filename);
         if (!file) return;
 
         nlohmann::json scene;
         file >> scene;
 
-        //cubes.clear();
+        _cubes.clear();
         for (const auto& cubeData : scene["cubes"]) {
-            //cubes.push_back({{cubeData["x"], cubeData["y"], cubeData["z"]}});
+            _cubes.push_back({{cubeData["x"], cubeData["y"], cubeData["z"]}});
         }
+    }
+
+    void GameApp::saveScene(const std::string& filename) {
+        nlohmann::json scene;
+        for (const auto& cube : _cubes) {
+            scene["cubes"].push_back({{"x", cube.position.x()}, {"y", cube.position.y()}, {"z", cube.position.z()}});
+        }
+        std::ofstream file(filename);
+        file << scene.dump(4);
     }
 
 
