@@ -325,7 +325,7 @@ namespace Game {
         _imgui.newFrame();
 
         ImGui::Begin("Scene Editor");
-
+        ImGui::SetWindowSize(ImVec2(500,100), ImGuiCond_FirstUseEver);
         if(ImGui::Button("Add a cube")) {
             _cubes.push_back({Magnum::Vector3(0.0f, 0.0f, 10.0f)});
         }
