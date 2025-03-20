@@ -27,6 +27,7 @@
 #include <fstream>
 #include <nlohmann/json.hpp>
 #include <Magnum/ImGuiIntegration/Context.hpp>
+#include <iostream>
 
 using namespace Magnum;
 using namespace Math::Literals;
@@ -327,6 +328,7 @@ namespace Game {
         ImGui::Begin("Scene Editor");
         ImGui::SetWindowSize(ImVec2(500,100), ImGuiCond_FirstUseEver);
         if(ImGui::Button("Add a cube")) {
+            std::cout << "[DEBUG] add button pressed !" << std::endl;
             _cubes.push_back({Magnum::Vector3(0.0f, 0.0f, 10.0f)});
         }
 
@@ -334,12 +336,14 @@ namespace Game {
             ImGui::PushID(i);
             ImGui::InputFloat3("Position", &_cubes[i].position[0]);
             if(ImGui::Button("Delete")) {
+                std::cout << "[DEBUG] delete button pressed !" << std::endl;
                 _cubes.erase(_cubes.begin() + i);
             }
             ImGui::PopID();
         }
 
         if(ImGui::Button("Save scene")) {
+            std::cout << "[DEBUG] save button pressed !" << std::endl;
             saveScene("scene.json");
         }
 
@@ -434,9 +438,9 @@ namespace Game {
 
     void GameApp::pointerPressEvent(PointerEvent &event) {
 
+        if (ImGui::GetIO().WantCaptureMouse) return;
         /* Shoot an object on click */
-        if (!event.isPrimary() ||
-            !(event.pointer() & (Pointer::MouseLeft)))
+        if (!event.isPrimary() || !(event.pointer() & (Pointer::MouseLeft)))
             return;
 
         /* First scale the position from being relative to window size to being
