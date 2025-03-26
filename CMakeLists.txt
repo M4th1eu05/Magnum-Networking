@@ -3,6 +3,29 @@ project(MagnumBootstrap)
 
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/modules/" ${CMAKE_MODULE_PATH})
 
+# Activer C++ 17
+set(CMAKE_CXX_STANDARD 17)
+
+include(FetchContent)
+
+# Récupérer ENet depuis GitHub
+FetchContent_Declare(
+        enet
+        GIT_REPOSITORY https://github.com/lsalzman/enet.git
+        GIT_TAG master  # Utilise la dernière version disponible
+)
+
+# Charger et intégrer ENet
+FetchContent_MakeAvailable(enet)
+
+# Add exe server
+add_executable(Server src/server.cpp)
+target_link_libraries(Server PRIVATE enet)
+
+# Add exe client
+add_executable(Client src/client.cpp)
+target_link_libraries(Client PRIVATE enet)
+
 add_subdirectory(externals)
 find_package(Magnum REQUIRED
         GL
@@ -23,14 +46,13 @@ add_executable(MagnumBootstrap
         src/World.cpp
         src/GameObject.cpp
         src/Components/BaseComponent.cpp
-        inc/ILifeCycle.h
         src/Components/Rigidbody.cpp
-        inc/Components/Rigidbody.h)
+        src/client.cpp
+        src/server.cpp)
 
 
 
 target_include_directories(MagnumBootstrap PUBLIC inc inc/Components)
-
 set_property(TARGET MagnumBootstrap PROPERTY CXX_STANDARD 20)
 target_link_libraries(MagnumBootstrap PRIVATE
         Magnum::Application
