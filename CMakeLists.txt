@@ -60,6 +60,7 @@ target_link_libraries(MagnumBootstrap PRIVATE
         LinearMath
         Bullet3Common
         nlohmann_json
+        enet6
 )
 
 
@@ -82,11 +83,10 @@ target_link_libraries(BulletExample PRIVATE
         LinearMath
         Bullet3Common
         nlohmann_json
+        enet6
 )
 
-# Trouver Enet6
 add_subdirectory("externals/enet6" "externals/enet6/build")
-
-# Lier Enet6 à ton projet
-target_link_libraries(MagnumBootstrap PRIVATE enet6)
-target_include_directories(MagnumBootstrap PRIVATE "externals/enet6/include")
+add_executable(Magnum test_enet6.cpp)
+target_link_libraries(Magnum PRIVATE enet6)
+target_include_directories(Magnum PRIVATE "externals/enet6/include")
