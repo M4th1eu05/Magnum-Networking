@@ -36,7 +36,8 @@ add_executable(MagnumBootstrap
         src/Components/BaseComponent.cpp
         src/Components/Rigidbody.cpp
         src/client.cpp
-        src/server.cpp)
+        src/server.cpp
+        src/test_enet6.cpp)
 
 
 
