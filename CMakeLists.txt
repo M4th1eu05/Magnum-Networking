@@ -6,18 +6,6 @@ set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/modules/" ${CMAKE_MODULE_PATH})
 # Activer C++ 17
 set(CMAKE_CXX_STANDARD 17)
 
-include(FetchContent)
-
-# Récupérer ENet depuis GitHub
-FetchContent_Declare(
-        enet
-        GIT_REPOSITORY https://github.com/lsalzman/enet.git
-        GIT_TAG master  # Utilise la dernière version disponible
-)
-
-# Charger et intégrer ENet
-FetchContent_MakeAvailable(enet)
-
 # Add exe server
 add_executable(Server src/server.cpp)
 target_link_libraries(Server PRIVATE enet)
@@ -94,3 +82,10 @@ target_link_libraries(BulletExample PRIVATE
         Bullet3Common
         nlohmann_json
 )
+
+# Trouver Enet6
+add_subdirectory("externals/enet6" "externals/enet6/build")
+
+# Lier Enet6 à ton projet
+target_link_libraries(MagnumBootstrap PRIVATE enet6)
+target_include_directories(MagnumBootstrap PRIVATE "externals/enet6/include")
