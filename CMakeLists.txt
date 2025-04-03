@@ -25,7 +25,8 @@ add_executable(MagnumBootstrap
         src/Components/BaseComponent.cpp
         inc/ILifeCycle.h
         src/Components/Rigidbody.cpp
-        inc/Components/Rigidbody.h)
+        inc/Components/Rigidbody.h
+        inc/Components/ISerializable.h)
 
 
 

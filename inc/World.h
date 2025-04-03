@@ -16,7 +16,7 @@
 using namespace Magnum;
 typedef SceneGraph::Scene<SceneGraph::MatrixTransformation3D> Scene3D;
 
-class World {
+class World final : public ISerializable{
 public:
     World(Magnum::Timeline& timeline);
 
@@ -30,6 +30,24 @@ public:
     void update();
 
     btDiscreteDynamicsWorld &getBulletWorld() { return _bWorld; }
+
+    void serialize(std::ostream& os) const override {
+        size_t objectCount = _objects.size();
+        os.write(reinterpret_cast<const char*>(&objectCount), sizeof(objectCount));
+        for (const auto& object : _objects) {
+            object->serialize(os);
+        }
+    }
+
+    void deserialize(std::istream& is) override {
+        size_t objectCount;
+        is.read(reinterpret_cast<char*>(&objectCount), sizeof(objectCount));
+        for (size_t i = 0; i < objectCount; ++i) {
+            auto object = std::make_shared<GameObject>();
+            object->deserialize(is);
+            addObject(object);
+        }
+    }
 
 public:
     BulletIntegration::DebugDraw _debugDraw{NoCreate};

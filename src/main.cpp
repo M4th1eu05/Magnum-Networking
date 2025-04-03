@@ -4,12 +4,10 @@
 #include <Corrade/Containers/Pointer.h>
 #include <Magnum/Timeline.h>
 #include <Magnum/BulletIntegration/Integration.h>
-#include <Magnum/BulletIntegration/MotionState.h>
 #include <Magnum/BulletIntegration/DebugDraw.h>
 #include <Magnum/GL/DefaultFramebuffer.h>
 #include <Magnum/GL/Mesh.h>
 #include <Magnum/GL/Renderer.h>
-#include <Magnum/Math/Constants.h>
 #include <Magnum/Math/Color.h>
 #include <Magnum/Math/Time.h>
 #include <Magnum/MeshTools/Compile.h>
@@ -29,6 +27,7 @@
 #include <nlohmann/json.hpp>
 
 #include "Rigidbody.h"
+#include "Magnum/ImGuiIntegration/Context.hpp"
 
 using namespace Magnum;
 using namespace Math::Literals;
@@ -52,13 +51,20 @@ namespace Game {
     private:
         void drawEvent() override;
 
-        void drawUI();
+        void drawUI() const;
 
         void keyPressEvent(KeyEvent &event) override;
+        void keyReleaseEvent(KeyEvent& event) override;
 
         void pointerPressEvent(PointerEvent &event) override;
-
+        void pointerReleaseEvent(PointerEvent& event) override;
+        void scrollEvent(ScrollEvent& event) override;
         void pointerMoveEvent(PointerMoveEvent &event) override;
+        void textInputEvent(TextInputEvent& event) override;
+
+        void viewportEvent(ViewportEvent& event) override;
+
+        ImGuiIntegration::Context _imgui{NoCreate};
 
         GL::Mesh _box{NoCreate}, _sphere{NoCreate};
         GL::Buffer _boxInstanceBuffer{NoCreate}, _sphereInstanceBuffer{NoCreate};
@@ -124,6 +130,19 @@ namespace Game {
             glConf.setSampleCount(dpiScaling.max() < 2.0f ? 8 : 2);
             if (!tryCreate(conf, glConf))
                 create(conf, glConf.setSampleCount(0));
+
+            _imgui = ImGuiIntegration::Context(
+                Vector2{windowSize()}/dpiScaling,
+                    windowSize(),
+                    framebufferSize());
+
+            /* Set up proper blending to be used by ImGui. There's a great chance
+               you'll need this exact behavior for the rest of your scene. If not, set
+               this only for the drawFrame() call. */
+            GL::Renderer::setBlendEquation(GL::Renderer::BlendEquation::Add,
+                GL::Renderer::BlendEquation::Add);
+            GL::Renderer::setBlendFunction(GL::Renderer::BlendFunction::SourceAlpha,
+                GL::Renderer::BlendFunction::OneMinusSourceAlpha);
         }
 
         _world = std::make_shared<World>(_timeline);
@@ -261,13 +280,61 @@ namespace Game {
                 GL::Renderer::setDepthFunction(GL::Renderer::DepthFunction::Less);
         }
 
+        _imgui.newFrame();
+        drawUI();
+        _imgui.updateApplicationCursor(*this);
+
+        /* Set appropriate states. If you only draw ImGui, it is sufficient to
+       just enable blending and scissor test in the constructor. */
+        GL::Renderer::enable(GL::Renderer::Feature::Blending);
+        GL::Renderer::enable(GL::Renderer::Feature::ScissorTest);
+        GL::Renderer::disable(GL::Renderer::Feature::FaceCulling);
+        GL::Renderer::disable(GL::Renderer::Feature::DepthTest);
+
+        _imgui.drawFrame();
+
+        /* Reset state. Only needed if you want to draw something else with
+       different state after. */
+        GL::Renderer::enable(GL::Renderer::Feature::DepthTest);
+        GL::Renderer::enable(GL::Renderer::Feature::FaceCulling);
+        GL::Renderer::disable(GL::Renderer::Feature::ScissorTest);
+        GL::Renderer::disable(GL::Renderer::Feature::Blending);
+
         swapBuffers();
         _timeline.nextFrame();
         redraw();
     }
 
+    void GameApp::drawUI() const {
+        ImGui::Begin("Serialization Controls");
+
+        if (ImGui::Button("Serialize World")) {
+            std::ofstream os("world_save.dat", std::ios::binary);
+            if (os) {
+                _world->serialize(os);
+                std::cout << "World serialized" << std::endl;
+            } else {
+                std::cerr << "Failed to open file for serialization" << std::endl;
+            }
+        }
+
+        if (ImGui::Button("Deserialize World")) {
+            std::ifstream is("world_save.dat", std::ios::binary);
+            if (is) {
+                _world->deserialize(is);
+                std::cout << "World deserialized" << std::endl;
+            } else {
+                std::cerr << "Failed to open file for deserialization" << std::endl;
+            }
+        }
+
+        ImGui::End();
+    }
+
 
     void GameApp::keyPressEvent(KeyEvent &event) {
+        if(_imgui.handleKeyPressEvent(event)) return;
+
         /* Movement */
         if (event.key() == Key::W) {
             _cameraObject->translate(Vector3::zAxis(-_cameraMoveSpeed));
@@ -302,7 +369,12 @@ namespace Game {
         event.setAccepted();
     }
 
+    void GameApp::keyReleaseEvent(KeyEvent &event) {
+        if(_imgui.handleKeyReleaseEvent(event)) return;
+    }
+
     void GameApp::pointerPressEvent(PointerEvent &event) {
+        if(_imgui.handlePointerPressEvent(event)) return;
 
         /* Shoot an object on click */
         if (!event.isPrimary() ||
@@ -339,7 +411,21 @@ namespace Game {
         event.setAccepted();
     }
 
+    void GameApp::pointerReleaseEvent(PointerEvent &event) {
+        if(_imgui.handlePointerReleaseEvent(event)) return;
+    }
+
+    void GameApp::scrollEvent(ScrollEvent &event) {
+        if(_imgui.handleScrollEvent(event)) {
+            /* Prevent scrolling the page */
+            event.setAccepted();
+            return;
+        }
+    }
+
     void GameApp::pointerMoveEvent(PointerMoveEvent &event) {
+        if(_imgui.handlePointerMoveEvent(event)) return;
+
         /* Rotate the camera on mouse drag */
         if (!event.isPrimary() ||
             !(event.pointers() & (Pointer::MouseRight)))
@@ -352,6 +438,17 @@ namespace Game {
 
         event.setAccepted();
         redraw();
+    }
+
+    void GameApp::textInputEvent(TextInputEvent &event) {
+        if(_imgui.handleTextInputEvent(event)) return;
+    }
+
+    void GameApp::viewportEvent(ViewportEvent &event) {
+        GL::defaultFramebuffer.setViewport({{}, event.framebufferSize()});
+
+        _imgui.relayout(Vector2{event.windowSize()}/event.dpiScaling(),
+            event.windowSize(), event.framebufferSize());
     }
 }
 
