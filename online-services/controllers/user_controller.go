@@ -1,16 +1,12 @@
 package controllers
 
 import (
+	"github.com/gin-gonic/gin"
+	"golang.org/x/crypto/bcrypt"
 	"net/http"
 	"online-services/database"
 	"online-services/middlewares"
 	"online-services/models"
-	"online-services/utils"
-
-	"github.com/gin-gonic/gin"
-	"github.com/gin-gonic/gin/binding"
-	"github.com/go-playground/validator/v10"
-	"golang.org/x/crypto/bcrypt"
 )
 
 type Info struct {
@@ -18,18 +14,11 @@ type Info struct {
 	Password string `form:"password" json:"password" binding:"required,notblank"`
 }
 
-func init () {
-	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
-		v.RegisterValidation("notblank", utils.NotBlank)
-	}
-}
-
 func Login(c *gin.Context) {
 	// Get the username and password from the request
 	var loginInfo Info
 
 	c.Bind(&loginInfo)
-	
 
 	// Check if the user exists in the database
 	var user models.User
@@ -97,12 +86,6 @@ func GetUserStats(c *gin.Context) {
 	if err := database.DB.Where("username = ?", username).First(&user).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
 		return
-	}
-
-	// Fetch user stats (dummy data for now)
-	stats := map[string]interface{}{
-		"username": username,
-		"score":    100,
 	}
 
 	c.JSON(http.StatusOK, stats)

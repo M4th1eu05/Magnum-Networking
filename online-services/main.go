@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"online-services/controllers"
 	"online-services/database"
+	"online-services/middlewares"
 	"online-services/utils"
 	"time"
 
@@ -20,7 +21,10 @@ func main() {
 	router.POST("/login", controllers.Login)
 	router.POST("/register", controllers.Register)
 
-	router.GET("/user/:username/stats", controllers.GetUserStats)
+	authorized := router.Group("/", middlewares.AuthMiddleware())
+	{
+		authorized.GET("/user/:username/stats", controllers.GetUserStats)
+	}
 
 	s := &http.Server{
 		Addr:           ":8080",
