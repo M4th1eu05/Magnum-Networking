@@ -87,6 +87,7 @@ target_link_libraries(BulletExample PRIVATE
 )
 
 add_subdirectory("externals/enet6" "externals/enet6/build")
-add_executable(Magnum test_enet6.cpp)
-target_link_libraries(Magnum PRIVATE enet6)
-target_include_directories(Magnum PRIVATE "externals/enet6/include")
+add_executable(TestEnet6 src/test_enet6.cpp)
+target_link_libraries(TestEnet6 PRIVATE enet6)
+target_include_directories(TestEnet6 PRIVATE "externals/enet6/include")
+
