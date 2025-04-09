@@ -25,6 +25,7 @@
 #include <fstream>
 #include <World.h>
 #include <nlohmann/json.hpp>
+#include "LoginWindow.h"
 
 #include "Rigidbody.h"
 #include "Magnum/ImGuiIntegration/Context.hpp"
@@ -52,6 +53,8 @@ namespace Game {
         void drawEvent() override;
 
         void drawUI() const;
+
+        static void RenderUI();
 
         void keyPressEvent(KeyEvent &event) override;
         void keyReleaseEvent(KeyEvent& event) override;
@@ -183,7 +186,7 @@ namespace Game {
                                          Shaders::PhongGL::NormalMatrix{},
                                          Shaders::PhongGL::Color3{});
 
-        /* Setup the renderer so we can draw the debug lines on top */
+        /* Set up the renderer so we can draw the debug lines on top */
         GL::Renderer::enable(GL::Renderer::Feature::DepthTest);
         GL::Renderer::enable(GL::Renderer::Feature::FaceCulling);
         GL::Renderer::enable(GL::Renderer::Feature::PolygonOffsetFill);
@@ -281,7 +284,7 @@ namespace Game {
         }
 
         _imgui.newFrame();
-        drawUI();
+        RenderUI();
         _imgui.updateApplicationCursor(*this);
 
         /* Set appropriate states. If you only draw ImGui, it is sufficient to
@@ -449,6 +452,20 @@ namespace Game {
 
         _imgui.relayout(Vector2{event.windowSize()}/event.dpiScaling(),
             event.windowSize(), event.framebufferSize());
+    }
+
+    void GameApp::RenderUI() {
+        // create login window
+        LoginWindow loginWindow;
+
+        // show login window
+        loginWindow.Render();
+
+        // check if user is logged in
+        if (loginWindow.IsLoggedIn()) {
+            // if logged in, show game UI
+            ImGui::Text("Bienvenue dans le jeu!");
+        }
     }
 }
 

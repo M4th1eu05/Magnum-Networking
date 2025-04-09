@@ -26,7 +26,8 @@ add_executable(MagnumBootstrap
         inc/ILifeCycle.h
         src/Components/Rigidbody.cpp
         inc/Components/Rigidbody.h
-        inc/Components/ISerializable.h)
+        inc/Components/ISerializable.h
+        src/LoginWindow.cpp)
 
 
 
@@ -53,7 +54,8 @@ target_link_libraries(MagnumBootstrap PRIVATE
 )
 
 
-add_executable(BulletExample src/BulletExample.cpp)
+add_executable(BulletExample src/BulletExample.cpp
+        inc/LoginWindow.h)
 set_property(TARGET BulletExample PROPERTY CXX_STANDARD 20)
 target_link_libraries(BulletExample PRIVATE
         Magnum::Application
