@@ -17,7 +17,7 @@ class btRigidBody;
 
 class Rigidbody : public BaseComponent {
 public:
-    Rigidbody(const Float mass, btCollisionShape *bShape, const std::shared_ptr<World> &world, const std::shared_ptr<GameObject> &gameObject);
+    Rigidbody(const Float mass, btCollisionShape *bShape, const std::shared_ptr<World2> &world, const std::shared_ptr<GameObject> &gameObject);
 
     ~Rigidbody();
 

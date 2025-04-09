@@ -85,7 +85,7 @@ namespace Game {
         float _cameraRotationSpeed{0.01f};
         float _cameraMoveSpeed{0.1f};
 
-        std::shared_ptr<World> _world;
+        std::shared_ptr<World2> _world;
     };
 
     class ColoredDrawable : public SceneGraph::Drawable3D {
@@ -126,7 +126,7 @@ namespace Game {
                 create(conf, glConf.setSampleCount(0));
         }
 
-        _world = std::make_shared<World>(_timeline);
+        _world = std::make_shared<World2>(_timeline);
         /* Camera setup */
         _cameraRig = _world->createGameObject();
         _cameraRig->translate(Vector3::yAxis(3.0f)).rotateY(40.0_degf);

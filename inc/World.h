@@ -16,9 +16,9 @@
 using namespace Magnum;
 typedef SceneGraph::Scene<SceneGraph::MatrixTransformation3D> Scene3D;
 
-class World {
+class World2 {
 public:
-    World(Magnum::Timeline& timeline);
+    World2(Magnum::Timeline& timeline);
 
     Scene3D& getScene() { return _scene; }
 

@@ -1,7 +1,3 @@
-//
-// Created by Tarook on 18/03/2025.
-//
-
 #include "World.h"
 
 #include <iostream>

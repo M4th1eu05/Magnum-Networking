@@ -37,7 +37,11 @@ add_executable(MagnumBootstrap
         src/Components/Rigidbody.cpp
         src/client.cpp
         src/server.cpp
-        src/test_enet6.cpp)
+        src/test_enet6.cpp
+        src/WorldSerializer.cpp
+        inc/WorldSerializer.h
+        inc/World2.h
+        src/World2.cpp)
 
 
 
@@ -90,4 +94,6 @@ add_subdirectory("externals/enet6" "externals/enet6/build")
 add_executable(TestEnet6 src/test_enet6.cpp)
 target_link_libraries(TestEnet6 PRIVATE enet6)
 target_include_directories(TestEnet6 PRIVATE "externals/enet6/include")
+target_include_directories(MagnumBootstrap PRIVATE externals/enet6/include)
+
 
