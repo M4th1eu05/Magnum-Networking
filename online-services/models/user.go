@@ -10,6 +10,7 @@ type User struct {
 	UUID     uuid.UUID `gorm:"type:uuid"`
 	Username string    `json:"name" gorm:"unique"`
 	Password string    `json:"password" gorm:"not null"`
+	IsAdmin  bool      `json:"is_admin" gorm:"default:false"`
 	Stats    Stats     `json:"stats" gorm:"foreignKey:UserID;constraint:OnDelete:CASCADE"`
 }
 

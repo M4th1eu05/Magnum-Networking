@@ -36,8 +36,17 @@ func CloseDB() {
 }
 
 func initializeDB() {
-	// AutoMigrate the User model
-    if err := DB.AutoMigrate(&models.User{}); err != nil {
+    // AutoMigrate all models    if err := DB.AutoMigrate(
+        &models.User{},
+        &models.Stats{},
+        &models.Achievement{},
+        &models.UserAchievement{},
+        &models.GameServer{},
+        &models.Game{},
+        &models.QueuedPlayer{},
+        &models.StoreItem{},
+        &models.UserItem{},
+    ); err != nil {
         log.Fatal(err)
     }
 }
