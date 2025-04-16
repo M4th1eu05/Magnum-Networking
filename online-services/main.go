@@ -17,45 +17,46 @@ func main() {
 	defer database.CloseDB()
 
 	utils.InitValidators()
+	router.Use(gin.Logger())
+	router.Use(gin.Recovery())
+
 	router.POST("/login", controllers.Login)
 	router.POST("/register", controllers.Register)
 
-	authorized := router.Group("/", middlewares.AuthMiddleware())
+	authorized := router.Group("", middlewares.AuthMiddleware())
 	{
-		// User and Stats endpoints
-		authorized.GET("/user/:username/stats", controllers.GetUserStats)
-		
-		// Achievement endpoints
-		authorized.GET("/achievements", controllers.GetAchievements)
-		authorized.GET("/user/:username/achievements", controllers.GetUserAchievements)
-		
+		authorized.GET("/user/stats", controllers.GetStats)
+
+		authorized.GET("/user/achievements", controllers.GetAchievements)
+
 		// Matchmaking endpoints
 		authorized.POST("/queue/join", controllers.JoinQueue)
 		authorized.POST("/queue/leave", controllers.LeaveQueue)
+
+		// Store endpoints
+		//authorized.GET("/store/items", controllers.GetStoreItems)
+		//authorized.GET("/user/:username/items", controllers.GetUserItems)
+		//authorized.POST("/store/items/:id/purchase", controllers.PurchaseItem)
+		//authorized.POST("/store/items/:id/equip", controllers.EquipItem)
 	}
-	// Store endpoints
-	authorized.GET("/store/items", controllers.GetStoreItems)
-	authorized.GET("/user/:username/items", controllers.GetUserItems)
-	authorized.POST("/store/items/:id/purchase", controllers.PurchaseItem)
-	authorized.POST("/store/items/:id/equip", controllers.EquipItem)
 
 	// Admin endpoints
-	admin := router.Group("/admin", middlewares.AuthMiddleware(), middlewares.AdminMiddleware())
-	{
-		// Achievement management
-		admin.POST("/achievements", controllers.CreateAchievement)
-		admin.PUT("/achievements/:id", controllers.UpdateAchievement)
-		admin.DELETE("/achievements/:id", controllers.DeleteAchievement)
-
-		// Server management
-		admin.POST("/servers", controllers.RegisterServer)
-		admin.PUT("/servers/:id/status", controllers.UpdateServerStatus)
-
-		// Store management
-		admin.POST("/store/items", controllers.CreateStoreItem)
-		admin.PUT("/store/items/:id", controllers.UpdateStoreItem)
-		admin.DELETE("/store/items/:id", controllers.DeleteStoreItem)
-	}
+	//admin := router.Group("/admin", middlewares.AuthMiddleware(), middlewares.AdminMiddleware())
+	//{
+	//	// Achievement management
+	//	admin.POST("/achievements", controllers.CreateAchievement)
+	//	admin.PUT("/achievements/:id", controllers.UpdateAchievement)
+	//	admin.DELETE("/achievements/:id", controllers.DeleteAchievement)
+	//
+	//	// Server management
+	//	admin.POST("/servers", controllers.RegisterServer)
+	//	admin.PUT("/servers/:id/status", controllers.UpdateServerStatus)
+	//
+	//	// Store management
+	//	admin.POST("/store/items", controllers.CreateStoreItem)
+	//	admin.PUT("/store/items/:id", controllers.UpdateStoreItem)
+	//	admin.DELETE("/store/items/:id", controllers.DeleteStoreItem)
+	//}
 
 	s := &http.Server{
 		Addr:           ":8080",

@@ -18,7 +18,11 @@ func Login(c *gin.Context) {
 	// Get the username and password from the request
 	var loginInfo Info
 
-	c.Bind(&loginInfo)
+	err := c.Bind(&loginInfo)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
+		return
+	}
 
 	// Check if the user exists in the database
 	var user models.User
@@ -46,7 +50,11 @@ func Login(c *gin.Context) {
 func Register(c *gin.Context) {
 	// Get the username and password from the request
 	var registerInfo Info
-	c.Bind(&registerInfo)
+	err := c.Bind(&registerInfo)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
+		return
+	}
 
 	// Hash the password
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(registerInfo.Password), bcrypt.DefaultCost)
@@ -76,17 +84,4 @@ func Register(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"token": token})
-}
-
-func GetUserStats(c *gin.Context) {
-	username := c.Param("username")
-
-	// Check if the user exists in the database
-	var user models.User
-	if err := database.DB.Where("username = ?", username).First(&user).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
-		return
-	}
-
-	c.JSON(http.StatusOK, stats)
 }

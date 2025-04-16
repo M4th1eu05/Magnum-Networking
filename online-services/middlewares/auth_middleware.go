@@ -21,7 +21,6 @@ func AuthMiddleware() gin.HandlerFunc {
 		}
 
 		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-			// Verify the token's signing method
 			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 				return nil, jwt.ErrSignatureInvalid
 			}
@@ -34,6 +33,10 @@ func AuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
+		claims, _ := token.Claims.(jwt.MapClaims)
+
+		c.Set("UUID", claims["uuid"])
+
 		c.Next()
 	}
 }
@@ -42,7 +45,7 @@ func GenerateToken(user models.User) (string, error) {
 	claims := jwt.MapClaims{
 		"username": user.Username,
 		"user_id":  user.UUID,
-		"exp": time.Now().Add(time.Hour * 72).Unix(),
+		"exp":      time.Now().Add(time.Hour * 72).Unix(),
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
