@@ -95,7 +95,10 @@ namespace Game {
         float _cameraMoveSpeed{0.1f};
 
         std::shared_ptr<World> _world;
+        static LoginWindow _loginWindow;
     };
+
+    LoginWindow Game::GameApp::_loginWindow;
 
     class ColoredDrawable : public SceneGraph::Drawable3D {
     public:
@@ -128,7 +131,8 @@ namespace Game {
             const Vector2 dpiScaling = this->dpiScaling({});
             Configuration conf;
             conf.setTitle("Epik cube gaming")
-                    .setSize(conf.size(), dpiScaling);
+                //.setWindowFlags(Configuration::WindowFlag::Fullscreen)  // Ajoutez cette ligne
+                .setSize(conf.size(), dpiScaling);
             GLConfiguration glConf;
             glConf.setSampleCount(dpiScaling.max() < 2.0f ? 8 : 2);
             if (!tryCreate(conf, glConf))
@@ -284,7 +288,14 @@ namespace Game {
         }
 
         _imgui.newFrame();
+
+        if(ImGui::GetIO().WantTextInput && !isTextInputActive())
+            startTextInput();
+        else if(!ImGui::GetIO().WantTextInput && isTextInputActive())
+            stopTextInput();
+
         RenderUI();
+
         _imgui.updateApplicationCursor(*this);
 
         /* Set appropriate states. If you only draw ImGui, it is sufficient to
@@ -336,7 +347,11 @@ namespace Game {
 
 
     void GameApp::keyPressEvent(KeyEvent &event) {
-        if(_imgui.handleKeyPressEvent(event)) return;
+        if(_imgui.handleKeyPressEvent(event)) {
+            event.setAccepted();
+            redraw();
+            return;
+        }
 
         /* Movement */
         if (event.key() == Key::W) {
@@ -373,7 +388,11 @@ namespace Game {
     }
 
     void GameApp::keyReleaseEvent(KeyEvent &event) {
-        if(_imgui.handleKeyReleaseEvent(event)) return;
+        if(_imgui.handleKeyReleaseEvent(event)) {
+            event.setAccepted();
+            redraw();
+            return;
+        }
     }
 
     void GameApp::pointerPressEvent(PointerEvent &event) {
@@ -444,7 +463,11 @@ namespace Game {
     }
 
     void GameApp::textInputEvent(TextInputEvent &event) {
-        if(_imgui.handleTextInputEvent(event)) return;
+        if(_imgui.handleTextInputEvent(event)) {
+            event.setAccepted();
+            redraw();
+            return;
+        }
     }
 
     void GameApp::viewportEvent(ViewportEvent &event) {
@@ -455,18 +478,14 @@ namespace Game {
     }
 
     void GameApp::RenderUI() {
-        // create login window
-        LoginWindow loginWindow;
 
-        // show login window
-        loginWindow.Render();
+        _loginWindow.Render();
 
-        // check if user is logged in
-        if (loginWindow.IsLoggedIn()) {
-            // if logged in, show game UI
+        if (_loginWindow.IsLoggedIn()) {
             ImGui::Text("Bienvenue dans le jeu!");
         }
     }
+
 }
 
 MAGNUM_APPLICATION_MAIN(Game::GameApp)

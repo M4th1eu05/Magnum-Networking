@@ -14,8 +14,8 @@ public:
     bool IsLoggedIn() const;  // check if user is logged in
 
 private:
-    char username[128];  // buffer for the username
-    char password[128];  // buffer for the password
+    char username[128];  // Buffer pour le nom d'utilisateur
+    char password[128];
     bool loggedIn;
     bool showError;
 
