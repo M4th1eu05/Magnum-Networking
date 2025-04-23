@@ -35,7 +35,7 @@ func AuthMiddleware() gin.HandlerFunc {
 
 		claims, _ := token.Claims.(jwt.MapClaims)
 
-		c.Set("UUID", claims["uuid"])
+		c.Set("UUID", claims["uuid"].(string))
 
 		c.Next()
 	}
@@ -44,7 +44,7 @@ func AuthMiddleware() gin.HandlerFunc {
 func GenerateToken(user models.User) (string, error) {
 	claims := jwt.MapClaims{
 		"username": user.Username,
-		"user_id":  user.UUID,
+		"uuid":  user.UUID,
 		"exp":      time.Now().Add(time.Hour * 72).Unix(),
 	}
 

@@ -27,6 +27,22 @@ func ConnectDB() {
 
 func CloseDB() {
 	if sqlDB, err := DB.DB(); err == nil {
+		if gin.Mode() == gin.TestMode {
+			var tables, err = DB.Migrator().GetTables()
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			for _, table := range tables {
+				if table == "sqlite_sequence" {
+					continue	
+				}
+				if err := DB.Migrator().DropTable(table); err != nil {
+					log.Fatal(err)
+				}
+			}
+		}
+	
 		err := sqlDB.Close()
 		if err != nil {
 			log.Fatal(err)
@@ -40,11 +56,11 @@ func initializeDB() {
 		&models.User{},
 		&models.Stats{},
 		&models.Achievement{},
-		&models.GameServer{},
-		&models.Game{},
-		&models.QueuedPlayer{},
-		&models.StoreItem{},
-		&models.UserItem{},
+		// &models.GameServer{},
+		// &models.Game{},
+		// &models.QueuedPlayer{},
+		// &models.StoreItem{},
+		// &models.UserItem{},
 	); err != nil {
 		log.Fatal(err)
 	}

@@ -1,9 +1,6 @@
 package tests
 
 import (
-	"github.com/gin-gonic/gin"
-	"github.com/stretchr/testify/assert"
-	"golang.org/x/crypto/bcrypt"
 	"net/http"
 	"net/http/httptest"
 	"online-services/controllers"
@@ -12,9 +9,13 @@ import (
 	"online-services/models"
 	"online-services/utils"
 	"testing"
+
+	"github.com/gin-gonic/gin"
+	"github.com/stretchr/testify/assert"
+	"golang.org/x/crypto/bcrypt"
 )
 
-func TestGetUserStatsSuccess(t *testing.T) {
+func TestGetStatsSuccess(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	database.ConnectDB()
 	defer database.CloseDB()
@@ -27,56 +28,52 @@ func TestGetUserStatsSuccess(t *testing.T) {
 	token, _ := middlewares.GenerateToken(testUser)
 
 	router := gin.Default()
-	utils.InitValidators()
-	router.GET("/user/:username/stats", middlewares.AuthMiddleware(), controllers.GetUserStats)
+	router.GET("/stats", middlewares.AuthMiddleware(), controllers.GetStats)
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/user/testuser/stats", nil)
+	req, _ := http.NewRequest("GET", "/stats", nil)
 	req.Header.Set("Authorization", token)
 	router.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Contains(t, w.Body.String(), "testuser")
-	assert.Contains(t, w.Body.String(), "score")
+	assert.Contains(t, w.Body.String(), "stats")
 }
 
-func TestGetUserStatsUnauthorized(t *testing.T) {
+func TestGetStatsUnauthorized(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	database.ConnectDB()
 	defer database.CloseDB()
 	utils.InitValidators()
 
 	router := gin.Default()
-	utils.InitValidators()
-	router.GET("/user/:username/stats", middlewares.AuthMiddleware(), controllers.GetUserStats)
+	router.GET("/stats", middlewares.AuthMiddleware(), controllers.GetStats)
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/user/testuser/stats", nil)
+	req, _ := http.NewRequest("GET", "/stats", nil)
 	router.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusUnauthorized, w.Code)
 }
 
-func TestGetUserStatsUserNotFound(t *testing.T) {
+func TestGetStatsUserNotFound(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	database.ConnectDB()
 	defer database.CloseDB()
 	utils.InitValidators()
 
 	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte("password123"), bcrypt.DefaultCost)
-	testUser := models.User{Username: "testuser", Password: string(hashedPassword)}
-	database.DB.Create(&testUser)
-
-	token, _ := middlewares.GenerateToken(testUser)
+	nonExistentUser := models.User{Username: "nonexistent", Password: string(hashedPassword)}
+	token, _ := middlewares.GenerateToken(nonExistentUser)
 
 	router := gin.Default()
-	utils.InitValidators()
-	router.GET("/user/:username/stats", middlewares.AuthMiddleware(), controllers.GetUserStats)
+	router.GET("/stats", middlewares.AuthMiddleware(), controllers.GetStats)
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/user/unknownuser/stats", nil)
-	req.Header.Set("Authorization", "Bearer "+token)
+	req, _ := http.NewRequest("GET", "/stats", nil)
+	req.Header.Set("Authorization", token)
 	router.ServeHTTP(w, req)
 
-	assert.Equal(t, http.StatusUnauthorized, w.Code)
+	assert.Equal(t, http.StatusNotFound, w.Code)
+	assert.Contains(t, w.Body.String(), "Utilisateur non trouvé")
 }

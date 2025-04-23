@@ -40,6 +40,12 @@ func main() {
 		//authorized.POST("/store/items/:id/equip", controllers.EquipItem)
 	}
 
+	server := router.Group("/server")
+	{
+
+		server.GET("/register", controllers.RegisterServer)
+	}
+
 	// Admin endpoints
 	//admin := router.Group("/admin", middlewares.AuthMiddleware(), middlewares.AdminMiddleware())
 	//{

@@ -9,14 +9,14 @@ import (
 	"online-services/models"
 )
 
-type Info struct {
+type UserInfo struct {
 	Username string `form:"username" json:"username" binding:"required,notblank"`
 	Password string `form:"password" json:"password" binding:"required,notblank"`
 }
 
 func Login(c *gin.Context) {
 	// Get the username and password from the request
-	var loginInfo Info
+	var loginInfo UserInfo
 
 	err := c.Bind(&loginInfo)
 	if err != nil {
@@ -49,7 +49,7 @@ func Login(c *gin.Context) {
 
 func Register(c *gin.Context) {
 	// Get the username and password from the request
-	var registerInfo Info
+	var registerInfo UserInfo
 	err := c.Bind(&registerInfo)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})

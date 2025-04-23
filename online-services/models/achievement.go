@@ -9,5 +9,6 @@ type Achievement struct {
 	Name        string `json:"name" gorm:"unique"`
 	Description string `json:"description"`
 	Condition   string `json:"condition"`
-	Threshold   int    `json:"threshold"`
+	StatsName   string `json:"stats_name"`
+	Threshold   float64    `json:"threshold"`
 }

@@ -29,51 +29,31 @@ func GetAchievements(c *gin.Context) {
 	c.JSON(http.StatusOK, achievements)
 }
 
-//
-//// CheckAchievements checks and awards achievements based on user stats
-//func CheckAchievements(stats models.Stats) error {
-//	var achievements []models.Achievement
-//	if err := database.DB.Find(&achievements).Error; err != nil {
-//		return err
-//	}
-//
-//	for _, achievement := range achievements {
-//		// Check if achievement conditions are met
-//		achieved := false
-//		switch achievement.Type {
-//		case "games_won":
-//			achieved = stats.NbrGamesWon >= achievement.Threshold
-//		case "games_played":
-//			achieved = stats.NbrGamesPlayed >= achievement.Threshold
-//		case "cubes_spawned":
-//			achieved = stats.NbrCubesSpawned >= achievement.Threshold
-//		case "spheres_spawned":
-//			achieved = stats.NbrSpheresSpawned >= achievement.Threshold
-//		}
-//
-//		if achieved {
-//			// Check if user already has this achievement
-//			var userAchievement models.UserAchievement
-//			result := database.DB.Where("user_id = ? AND achievement_id = ?", stats.UserID, achievement.ID).First(&userAchievement)
-//			if result.RowsAffected == 0 {
-//				// Award new achievement
-//				newUserAchievement := models.UserAchievement{
-//					UserID:        uint(stats.UserID),
-//					AchievementID: achievement.ID,
-//					UnlockedAt:    time.Now().Unix(),
-//				}
-//				if err := database.DB.Create(&newUserAchievement).Error; err != nil {
-//					return err
-//				}
-//			}
-//		}
-//	}
-//	return nil
-//}
+
+func CheckAchievements(stats models.Stats) error {
+	var achievements []models.Achievement
+	if err := database.DB.Where("StatsName = ?", stats.Name).Find(&achievements).Error; err != nil {
+		return err
+	}
+
+
+	for _, achievement := range achievements {
+
+		if stats.Value >= achievement.Threshold {
+			var user models.User
+			if err := database.DB.Where("id = ?", stats.ID).First(&user).Error; err != nil {
+				return err
+			}
+			if err := database.DB.Model(&user).Association("Achievements").Append(&achievement); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
 
 // Admin routes
-
-// CreateAchievement creates a new achievement (admin only)
 func CreateAchievement(c *gin.Context) {
 	var achievement models.Achievement
 	if err := c.ShouldBindJSON(&achievement); err != nil {
@@ -89,7 +69,6 @@ func CreateAchievement(c *gin.Context) {
 	c.JSON(http.StatusCreated, achievement)
 }
 
-// UpdateAchievement updates an existing achievement (admin only)
 func UpdateAchievement(c *gin.Context) {
 	id := c.Param("id")
 	var achievement models.Achievement
@@ -112,7 +91,6 @@ func UpdateAchievement(c *gin.Context) {
 	c.JSON(http.StatusOK, achievement)
 }
 
-// DeleteAchievement deletes an achievement (admin only)
 func DeleteAchievement(c *gin.Context) {
 	id := c.Param("id")
 	if err := database.DB.Delete(&models.Achievement{}, id).Error; err != nil {
