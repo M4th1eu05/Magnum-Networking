@@ -27,6 +27,7 @@
 #include <nlohmann/json.hpp>
 #include "LoginWindow.h"
 #include "LobbyWindow.h"
+#include "GameWindow.h"
 
 #include "Rigidbody.h"
 #include "Magnum/ImGuiIntegration/Context.hpp"
@@ -98,10 +99,12 @@ namespace Game {
         std::shared_ptr<World> _world;
         static LoginWindow _loginWindow;
         static LobbyWindow _lobbyWindow;
+        static GameWindow _gameWindow;
     };
 
     LoginWindow Game::GameApp::_loginWindow;
     LobbyWindow Game::GameApp::_lobbyWindow;
+    GameWindow Game::GameApp::_gameWindow;
 
     class ColoredDrawable : public SceneGraph::Drawable3D {
     public:
@@ -492,6 +495,10 @@ namespace Game {
 
         if (_loginWindow.IsLoggedIn()) {
             _lobbyWindow.Render();
+        }
+
+        if (_lobbyWindow.IsGameStarted()) {
+            _gameWindow.Render();
         }
     }
 

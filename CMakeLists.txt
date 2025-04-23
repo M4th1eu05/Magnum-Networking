@@ -28,7 +28,8 @@ add_executable(MagnumBootstrap
         inc/Components/Rigidbody.h
         inc/Components/ISerializable.h
         src/LoginWindow.cpp
-        src/LobbyWindow.cpp)
+        src/LobbyWindow.cpp
+        src/GameWindow.cpp)
 
 include_directories(inc)
 

@@ -2,7 +2,7 @@
 #include "imgui.h"
 
 LobbyWindow::LobbyWindow() {
-    // initialize
+    gameStarted(false);
 }
 
 LobbyWindow::~LobbyWindow() {
@@ -22,21 +22,15 @@ void LobbyWindow::Render() {
     ImGui::Separator();
 
     if (ImGui::CollapsingHeader("Options du jeu")) {
-        // Options du jeu
-        static bool fullscreen = true;
-        ImGui::Checkbox("Plein écran", &fullscreen);
-
         static float volume = 0.5f;
         ImGui::SliderFloat("Volume", &volume, 0.0f, 1.0f);
-
-        ImGui::Text("Autres options...");
     }
 
     ImGui::Separator();
 
     // Boutons de contrôle du jeu
     if (ImGui::Button("Lancer une partie", ImVec2(280, 30))) {
-        // Code pour démarrer une nouvelle partie
+        gameStarted = true;
     }
 
     ImGui::Separator();
@@ -46,4 +40,8 @@ void LobbyWindow::Render() {
     }
 
     ImGui::End();
+}
+
+bool LobbyWindow::IsGameStarted() const {
+    return gameStarted;
 }

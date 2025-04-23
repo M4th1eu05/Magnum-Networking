@@ -5,17 +5,15 @@
 #ifndef GAMEWINDOW_H
 #define GAMEWINDOW_H
 
-class LobbyWindow {
+class GameWindow {
 public:
-    LobbyWindow();
-    ~LobbyWindow();
+    GameWindow();
+    ~GameWindow();
 
     void Render();
-    bool IsGameStarted() const;
 
 private:
-    bool gameStarted;
-
+    // Ajoutez des variables membres selon vos besoins
 };
 
 
