@@ -18,6 +18,17 @@ find_package(Bullet REQUIRED Dynamics)
 
 set_directory_properties(PROPERTIES CORRADE_USE_PEDANTIC_FLAGS ON)
 
+include(FetchContent)
+
+# Fetch enet6
+FetchContent_Declare(
+        enet6
+        GIT_REPOSITORY https://github.com/SirLynix/enet6.git
+        GIT_TAG main # Replace with a specific tag or commit if needed
+)
+
+FetchContent_MakeAvailable(enet6)
+
 add_executable(MagnumBootstrap
         src/main.cpp
         src/World.cpp
@@ -26,7 +37,9 @@ add_executable(MagnumBootstrap
         inc/ILifeCycle.h
         src/Components/Rigidbody.cpp
         inc/Components/Rigidbody.h
-        inc/Components/ISerializable.h)
+        inc/Components/ISerializable.h
+        src/Components/Collider.cpp
+        inc/Components/Collider.h)
 
 
 
@@ -73,3 +86,7 @@ target_link_libraries(BulletExample PRIVATE
         Bullet3Common
         nlohmann_json
 )
+
+# Link enet6 to your target
+target_link_libraries(MagnumBootstrap PRIVATE enet)
+target_link_libraries(BulletExample PRIVATE enet)
