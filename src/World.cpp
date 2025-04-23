@@ -13,13 +13,13 @@ World::World(Timeline& timeline) : _timeline(timeline) {
     _bWorld.setDebugDrawer(&_debugDraw);
 }
 
-std::shared_ptr<GameObject> World::createGameObject(std::shared_ptr<GameObject> parent) {
+std::shared_ptr<GameObject> World::createGameObject(const std::shared_ptr<GameObject> &parent) {
     std::shared_ptr<GameObject> object;
     if (!parent) {
-        object = std::make_shared<GameObject>(&_scene);
+        object = std::make_shared<GameObject>(&_scene, shared_from_this());
     }
     else {
-        object = std::make_shared<GameObject>(parent.get());
+        object = std::make_shared<GameObject>(parent.get(), shared_from_this());
     }
 
     addObject(object);

@@ -16,13 +16,13 @@
 using namespace Magnum;
 typedef SceneGraph::Scene<SceneGraph::MatrixTransformation3D> Scene3D;
 
-class World final : public ISerializable{
+class World final : public ISerializable, public std::enable_shared_from_this<World> {
 public:
     World(Magnum::Timeline& timeline);
 
     Scene3D& getScene() { return _scene; }
 
-    std::shared_ptr<GameObject> createGameObject(std::shared_ptr<GameObject> parent = nullptr);
+    std::shared_ptr<GameObject> createGameObject(const std::shared_ptr<GameObject> &parent = nullptr);
     void addObject(const std::shared_ptr<GameObject> &object);
 
     void removeObject(std::shared_ptr<GameObject> object);

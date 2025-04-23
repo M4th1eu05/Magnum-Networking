@@ -196,7 +196,8 @@ namespace Game {
         /* Create the ground */
         //auto *ground = new RigidBody{&_scene, 0.0f, &_bGroundShape, _bWorld};
         const std::shared_ptr<GameObject> ground = _world->createGameObject();
-        ground->addComponent<Rigidbody>(0.0f, &_bGroundShape, _world);
+        ground->addComponent<Collider>(reinterpret_cast<btCollisionShape*>(&_bGroundShape));
+        ground->addComponent<Rigidbody>(0.0f);
 
         new ColoredDrawable{
             *ground, _boxInstanceData, 0xffffff_rgbf,
@@ -209,7 +210,8 @@ namespace Game {
             for (Int j = 0; j != 10; ++j) {
                 for (Int k = 0; k != 5; ++k) {
                     const std::shared_ptr<GameObject> newBox = _world->createGameObject();
-                    auto rb = newBox->addComponent<Rigidbody>(1.0f, &_bBoxShape, _world);
+                    auto collider = newBox->addComponent<Collider>(reinterpret_cast<btCollisionShape*>(&_bBoxShape));
+                    const auto rb = newBox->addComponent<Rigidbody>(1.0f);
                     newBox->translate({i + 1.0f , j + 5.0f, k + 1.0f});
                     rb->syncPose();
                     new ColoredDrawable{
@@ -393,7 +395,14 @@ namespace Game {
 
         /* Create a new object */
         auto newObject = _world->createGameObject();
-        auto rb = newObject->addComponent<Rigidbody>(_shootBox ? 1.0f : 5.0f, _shootBox ? static_cast<btCollisionShape *>(&_bBoxShape) : &_bSphereShape, _world);
+        if (_shootBox) {
+            newObject->addComponent<Collider>(reinterpret_cast<btCollisionShape*>(&_bBoxShape));
+
+        }
+        else {
+            newObject->addComponent<Collider>(reinterpret_cast<btCollisionShape*>(&_bSphereShape));
+        }
+        auto rb = newObject->addComponent<Rigidbody>(_shootBox ? 1.0f : 5.0f);
         newObject->translate(_cameraObject->absoluteTransformation().translation());
         rb->syncPose();
 
