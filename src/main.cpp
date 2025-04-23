@@ -26,6 +26,7 @@
 #include <World.h>
 #include <nlohmann/json.hpp>
 #include "LoginWindow.h"
+#include "LobbyWindow.h"
 
 #include "Rigidbody.h"
 #include "Magnum/ImGuiIntegration/Context.hpp"
@@ -96,9 +97,11 @@ namespace Game {
 
         std::shared_ptr<World> _world;
         static LoginWindow _loginWindow;
+        static LobbyWindow _lobbyWindow;
     };
 
     LoginWindow Game::GameApp::_loginWindow;
+    LobbyWindow Game::GameApp::_lobbyWindow;
 
     class ColoredDrawable : public SceneGraph::Drawable3D {
     public:
@@ -131,7 +134,8 @@ namespace Game {
             const Vector2 dpiScaling = this->dpiScaling({});
             Configuration conf;
             conf.setTitle("Epik cube gaming")
-                //.setWindowFlags(Configuration::WindowFlag::Fullscreen)  // Ajoutez cette ligne
+                .setWindowFlags(Configuration::WindowFlag::Borderless |
+                    Configuration::WindowFlag::Maximized)
                 .setSize(conf.size(), dpiScaling);
             GLConfiguration glConf;
             glConf.setSampleCount(dpiScaling.max() < 2.0f ? 8 : 2);
@@ -463,7 +467,8 @@ namespace Game {
     }
 
     void GameApp::textInputEvent(TextInputEvent &event) {
-        if(_imgui.handleTextInputEvent(event)) {
+        if(_imgui.handleTextInputEvent(event))
+            {
             event.setAccepted();
             redraw();
             return;
@@ -475,6 +480,10 @@ namespace Game {
 
         _imgui.relayout(Vector2{event.windowSize()}/event.dpiScaling(),
             event.windowSize(), event.framebufferSize());
+
+        //* Update the camera projection matrix
+        float aspect = float(event.framebufferSize().x())/float(event.framebufferSize().y());
+        _camera->setProjectionMatrix(Matrix4::perspectiveProjection(45.0_degf, aspect, 0.1f, 1000.0f));
     }
 
     void GameApp::RenderUI() {
@@ -482,7 +491,7 @@ namespace Game {
         _loginWindow.Render();
 
         if (_loginWindow.IsLoggedIn()) {
-            ImGui::Text("Bienvenue dans le jeu!");
+            _lobbyWindow.Render();
         }
     }
 

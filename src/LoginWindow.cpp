@@ -11,6 +11,10 @@ LoginWindow::LoginWindow()
 LoginWindow::~LoginWindow() {}
 
 void LoginWindow::Render() {
+    if (loggedIn) {
+        return;
+    }
+
     // Récupérer la taille de l'écran
     ImVec2 screenSize = ImGui::GetIO().DisplaySize;
 
@@ -39,7 +43,7 @@ void LoginWindow::Render() {
 
     // Positionnement de la boîte de login
     float loginBoxWidth = 300.0f;
-    float loginBoxHeight = 200.0f; // Augmenté pour l'espace vertical supplémentaire
+    float loginBoxHeight = 250.0f;
     ImVec2 loginBoxPos = ImVec2((screenSize.x - loginBoxWidth) * 0.5f,
                                (screenSize.y - loginBoxHeight) * 0.5f);
 
@@ -79,9 +83,13 @@ void LoginWindow::Render() {
     }
 
     ImGui::Spacing();
-    ImGui::SetCursorPos(ImVec2(loginBoxPos.x + 20, loginBoxPos.y + loginBoxHeight - 40));
+    ImGui::SetCursorPos(ImVec2(loginBoxPos.x + 20, loginBoxPos.y + loginBoxHeight - 80));
     if (ImGui::Button("Login", ImVec2(loginBoxWidth - 40, 30))) {
         Authenticate();
+    }
+    ImGui::Spacing();
+    if (ImGui::Button("Quit", ImVec2(loginBoxWidth - 40, 30))) {
+        exit(0);
     }
 
     ImGui::EndGroup();
