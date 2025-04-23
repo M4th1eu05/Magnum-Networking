@@ -220,3 +220,6 @@ $RECYCLE.BIN/
 
 # Ignore .vs files
 .vs/
+
+# ignore online services directory
+!online-services/

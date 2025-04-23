@@ -13,6 +13,7 @@ type User struct {
 	IsAdmin      bool          `json:"is_admin" gorm:"default:false"`
 	Stats        []Stats       `json:"stats" gorm:"constraint:OnDelete:CASCADE"`
 	Achievements []Achievement `json:"achievements" gorm:"many2many:user_achievements;constraint:OnDelete:CASCADE"`
+	GameID       uint          `json:"game_id" gorm:"constraint:OnDelete:SET NULL"`
 }
 
 func (u *User) BeforeCreate(tx *gorm.DB) (err error) {
