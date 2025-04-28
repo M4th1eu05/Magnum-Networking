@@ -28,7 +28,6 @@ func TestLoginSuccess(t *testing.T) {
 	database.DB.Create(&testUser)
 
 	router := gin.Default()
-	utils.InitValidators()
 	router.POST("/login", controllers.Login)
 
 	w := httptest.NewRecorder()

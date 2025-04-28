@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"online-services/database"
 	"online-services/models"
+	"strconv"
 )
 
 func GetAchievements(c *gin.Context) {
@@ -21,7 +22,7 @@ func GetAchievements(c *gin.Context) {
 	}
 
 	var achievements []models.Achievement
-	if err := database.DB.Where("user_id = ?", user.ID).Find(&achievements).Error; err != nil {
+	if err := database.DB.Model(&user).Association("Achievements").Find(&achievements); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error fetching user achievements"})
 		return
 	}
@@ -29,13 +30,11 @@ func GetAchievements(c *gin.Context) {
 	c.JSON(http.StatusOK, achievements)
 }
 
-
-func CheckAchievements(stats models.Stats) error {
+func CheckAchievements(stats models.Stat) error {
 	var achievements []models.Achievement
-	if err := database.DB.Where("StatsName = ?", stats.Name).Find(&achievements).Error; err != nil {
+	if err := database.DB.Where("stats_name = ?", stats.Name).Find(&achievements).Error; err != nil {
 		return err
 	}
-
 
 	for _, achievement := range achievements {
 
@@ -52,15 +51,30 @@ func CheckAchievements(stats models.Stats) error {
 	return nil
 }
 
+type AchievementInfo struct {
+	Name        string `form:"name" json:"name" binding:"required,notblank"`
+	Description string `form:"description" json:"description" binding:"required,notblank"`
+	Condition   string `form:"condition" json:"condition" binding:"required,notblank"`
+	StatsName   string `form:"stats_name" json:"stats_name" binding:"required,notblank"`
+	Threshold   string `form:"threshold" json:"threshold" binding:"required,notblank,convertFloat64"`
+}
 
 // Admin routes
 func CreateAchievement(c *gin.Context) {
-	var achievement models.Achievement
-	if err := c.ShouldBindJSON(&achievement); err != nil {
+	var achievementInfo AchievementInfo
+	if err := c.Bind(&achievementInfo); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
+	f, _ := strconv.ParseFloat(achievementInfo.Threshold, 64)
+	achievement := models.Achievement{
+		Name:        achievementInfo.Name,
+		Condition:   achievementInfo.Condition,
+		Description: achievementInfo.Description,
+		StatsName:   achievementInfo.StatsName,
+		Threshold:   f,
+	}
 	if err := database.DB.Create(&achievement).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create achievement"})
 		return
@@ -71,17 +85,25 @@ func CreateAchievement(c *gin.Context) {
 
 func UpdateAchievement(c *gin.Context) {
 	id := c.Param("id")
-	var achievement models.Achievement
 
+	var achievementInfo AchievementInfo
+	if err := c.ShouldBindJSON(&achievementInfo); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	var achievement models.Achievement
 	if err := database.DB.First(&achievement, id).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Achievement not found"})
 		return
 	}
 
-	if err := c.ShouldBindJSON(&achievement); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
+	f, _ := strconv.ParseFloat(achievementInfo.Threshold, 64)
+	achievement.Name = achievementInfo.Name
+	achievement.Condition = achievementInfo.Condition
+	achievement.Description = achievementInfo.Description
+	achievement.StatsName = achievementInfo.StatsName
+	achievement.Threshold = f
 
 	if err := database.DB.Save(&achievement).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update achievement"})

@@ -77,3 +77,30 @@ func TestGetStatsUserNotFound(t *testing.T) {
 	assert.Equal(t, http.StatusNotFound, w.Code)
 	assert.Contains(t, w.Body.String(), "Utilisateur non trouvé")
 }
+
+func TestUpdateStatsAndAchievements(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	database.ConnectDB()
+	defer database.CloseDB()
+
+	// Create test user
+	user := models.User{Username: "testuser", Password: "password123"}
+	database.DB.Create(&user)
+
+	// Create an achievement
+	achievement := models.Achievement{Name: "High Score", Threshold: 50, StatsName: "score"}
+	database.DB.Create(&achievement)
+
+	// Update stats
+	stats := []controllers.StatsInfo{
+		{UserUUID: user.UUID, StatName: "score", Value: 60},
+	}
+	err := controllers.UpdateStats(user.UUID, stats)
+	assert.NoError(t, err)
+
+	// Check if the achievement was unlocked
+	var userAchievements []models.Achievement
+	database.DB.Model(&user).Association("Achievements").Find(&userAchievements)
+	assert.Equal(t, 1, len(userAchievements))
+	assert.Equal(t, "High Score", userAchievements[0].Name)
+}

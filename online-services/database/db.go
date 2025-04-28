@@ -1,6 +1,7 @@
 package database
 
 import (
+	"golang.org/x/crypto/bcrypt"
 	"log"
 	"online-services/models"
 
@@ -35,14 +36,14 @@ func CloseDB() {
 
 			for _, table := range tables {
 				if table == "sqlite_sequence" {
-					continue	
+					continue
 				}
 				if err := DB.Migrator().DropTable(table); err != nil {
 					log.Fatal(err)
 				}
 			}
 		}
-	
+
 		err := sqlDB.Close()
 		if err != nil {
 			log.Fatal(err)
@@ -54,14 +55,23 @@ func CloseDB() {
 func initializeDB() {
 	if err := DB.AutoMigrate(
 		&models.User{},
-		&models.Stats{},
+		&models.Stat{},
 		&models.Achievement{},
-		// &models.GameServer{},
-		// &models.Game{},
-		// &models.QueuedPlayer{},
-		// &models.StoreItem{},
-		// &models.UserItem{},
+		&models.GameServer{},
+		&models.Game{},
 	); err != nil {
 		log.Fatal(err)
 	}
+
+	var admin models.User
+	if err := DB.Where("username = ?", "admin").First(&admin).Error; err != nil {
+		hashedPassword, _ := bcrypt.GenerateFromPassword([]byte("admin"), bcrypt.DefaultCost)
+		admin = models.User{
+			Username: "admin",
+			Password: string(hashedPassword),
+		}
+		DB.Create(&admin)
+	}
+	admin.Role = "admin"
+	DB.Save(&admin)
 }

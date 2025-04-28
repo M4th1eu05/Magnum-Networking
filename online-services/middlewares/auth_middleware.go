@@ -15,9 +15,11 @@ func AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		tokenString := c.GetHeader("Authorization")
 		if tokenString == "" {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Missing token"})
-			c.Abort()
-			return
+			if tokenString, _ = c.Cookie("token"); tokenString == "" {
+				c.JSON(http.StatusUnauthorized, gin.H{"error": "Missing token"})
+				c.Abort()
+				return
+			}
 		}
 
 		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
@@ -44,7 +46,7 @@ func AuthMiddleware() gin.HandlerFunc {
 func GenerateToken(user models.User) (string, error) {
 	claims := jwt.MapClaims{
 		"username": user.Username,
-		"uuid":  user.UUID,
+		"uuid":     user.UUID,
 		"exp":      time.Now().Add(time.Hour * 72).Unix(),
 	}
 

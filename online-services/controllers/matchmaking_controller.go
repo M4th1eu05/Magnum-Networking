@@ -1,25 +1,87 @@
 package controllers
 
 import (
-	"errors"
+	"fmt"
+	"github.com/google/uuid"
+	"gorm.io/gorm/clause"
 	"log"
 	"net/http"
 	"online-services/database"
 	"online-services/models"
 	"sync"
-	"time"
 
 	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
 )
+
+type MatchmakingQueue struct {
+	sync.Mutex
+	players []models.User
+	cond    *sync.Cond
+}
+
+var Queue *MatchmakingQueue
+
+func NewMatchmakingQueue() *MatchmakingQueue {
+	queue := &MatchmakingQueue{
+		players: []models.User{},
+	}
+	queue.cond = sync.NewCond(&queue.Mutex)
+	return queue
+}
+
+func (q *MatchmakingQueue) Enqueue(player models.User) {
+	q.Lock()
+	defer q.Unlock()
+	q.players = append(q.players, player)
+	q.cond.Signal()
+}
+
+func (q *MatchmakingQueue) Dequeue() models.User {
+	q.Lock()
+	defer q.Unlock()
+	for len(q.players) == 0 {
+		q.cond.Wait()
+	}
+	player := q.players[0]
+	q.players = q.players[1:]
+	return player
+}
+
+func (q *MatchmakingQueue) PlayerInQueue(player models.User) bool {
+	q.Lock()
+	defer q.Unlock()
+	for _, p := range q.players {
+		if p.ID == player.ID {
+			return true
+		}
+	}
+	return false
+}
+
+func (q *MatchmakingQueue) StartMatchmaking(matchSize int, matchHandler func([]models.User)) {
+	go func() {
+		for {
+			q.Lock()
+			for len(q.players) < matchSize {
+				fmt.Println("Waiting for more players to join the queue...")
+				q.cond.Wait()
+			}
+
+			matchPlayers := make([]models.User, matchSize)
+			copy(matchPlayers, q.players[:matchSize])
+			q.players = q.players[matchSize:]
+			q.Unlock()
+
+			// Handle the match
+			matchHandler(matchPlayers)
+		}
+	}()
+}
 
 type GameServerInfo struct {
 	IP   string `form:"ip" json:"ip" binding:"required"`
 	Port int    `form:"port" json:"port" binding:"required"`
 }
-
-var queue = make([]models.User, 0)
-var queueMutex sync.Mutex
 
 func RegisterServer(c *gin.Context) {
 	var serverInfo GameServerInfo
@@ -29,17 +91,11 @@ func RegisterServer(c *gin.Context) {
 	}
 
 	server := models.GameServer{
-		IP:     serverInfo.IP,
-		Port:   serverInfo.Port,
-		Status: "available",
+		IP:   serverInfo.IP,
+		Port: serverInfo.Port,
 	}
-
-	var existingServer models.GameServer
-	if err := database.DB.Where("ip = ? AND port = ?", server.IP, server.Port).First(&existingServer).Error; err == nil {
+	if err := database.DB.Where("ip = ? AND port = ?", serverInfo.IP, serverInfo.Port).First(&server).Error; err == nil {
 		c.JSON(http.StatusConflict, gin.H{"error": "Server already registered"})
-		return
-	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database error"})
 		return
 	}
 
@@ -65,9 +121,7 @@ func JoinQueue(c *gin.Context) {
 		return
 	}
 
-	queueMutex.Lock()
-	queue = append(queue, user)
-	queueMutex.Unlock()
+	Queue.Enqueue(user)
 
 	c.JSON(http.StatusOK, gin.H{"message": "Joined matchmaking queue"})
 }
@@ -86,25 +140,30 @@ func QueueStatus(c *gin.Context) {
 		return
 	}
 
-	queueMutex.Lock()
-	inQueue := false
-	for _, queuedUser := range queue {
-		if queuedUser.ID == user.ID {
-			inQueue = true
-			break
-		}
-	}
-	queueMutex.Unlock()
+	inQueue := Queue.PlayerInQueue(user)
 
 	if inQueue {
-		c.JSON(http.StatusOK, gin.H{"status": "in queue"})
+		c.JSON(http.StatusTooEarly, gin.H{"status": "in queue"})
 	} else {
-		// get game from user
-		var game models.Game
-		if err := database.DB.Where("game_id = ?", user.GameID).First(&game).Error; err != nil {
-
+		// Check if the user has a game
+		if user.GameID == nil {
+			c.JSON(http.StatusBadRequest, gin.H{"status": "not in queue"})
+			return
 		}
-		c.JSON(http.StatusOK, gin.H{"status": "not in queue"})
+
+		var game models.Game
+		if err := database.DB.Model(&game).Where("id = ?", user.GameID).Preload(clause.Associations).First(&game).Error; err != nil {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Game not found"})
+			return
+		}
+
+		var server models.GameServer
+		if err := database.DB.Where("id = ?", game.GameServerID).First(&server).Error; err != nil {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Game server not found"})
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{"game": game, "server": server})
 	}
 }
 
@@ -122,42 +181,110 @@ func LeaveQueue(c *gin.Context) {
 		return
 	}
 
-	queueMutex.Lock()
-	for i, queuedUser := range queue {
-		if queuedUser.ID == user.ID {
-			queue = append(queue[:i], queue[i+1:]...)
-			break
-		}
-	}
-	queueMutex.Unlock()
+	Queue.Dequeue()
 
 	c.JSON(http.StatusOK, gin.H{"message": "Left matchmaking queue"})
 }
 
-// Internal function to match players
-func matchPlayers() {
-	for {
-		time.Sleep(1 * time.Second) // Intervalle pour vérifier la file d'attente
-
-		queueMutex.Lock()
-		if len(queue) >= 4 {
-			// Extraire deux joueurs de la file d'attente
-			players := queue[:4]
-			queue = queue[4:]
-
-			createMatch(players)
-		}
-		queueMutex.Unlock()
+func CreateMatch(players []models.User) {
+	// find a game server
+	var server models.GameServer
+	if err := database.DB.Where("status = ?", "available").First(&server).Error; err != nil {
+		log.Println("No available game server")
+		return
 	}
-}
 
-func createMatch(players []models.User) {
 	game := models.Game{
-		Players: players,
+		Players:      players,
+		GameServerID: server.ID,
 	}
 	if err := database.DB.Create(&game).Error; err != nil {
 		log.Fatal(err)
 		return
 	}
 
+	if err := database.DB.Model(&players).Update("game_id", game.ID).Error; err != nil {
+		log.Fatal(err)
+		return
+	}
+
+	server.CurrentGame = &game
+	server.Status = "in_game"
+	if err := database.DB.Save(&server).Error; err != nil {
+		log.Fatal(err)
+		return
+	}
+
+	return
+}
+
+// StartGame Called when a match starts by the game server
+func StartGame(c *gin.Context) {
+	// get server info
+	var serverInfo GameServerInfo
+	if err := c.ShouldBindJSON(&serverInfo); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// find the game server
+	var server models.GameServer
+	if err := database.DB.Preload("CurrentGame").Preload("CurrentGame.Players").Where("ip = ? AND port = ?", serverInfo.IP, serverInfo.Port).First(&server).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Server not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Match started", "server": server})
+}
+
+type StatsInfo struct {
+	UserUUID uuid.UUID `json:"user_uuid" binding:"required"`
+	StatName string    `json:"stat_name" binding:"required"`
+	Value    float64   `json:"value" binding:"required"`
+}
+type GameInfo struct {
+	GameID uint        `json:"game_id" binding:"required"`
+	Stats  []StatsInfo `json:"stats" binding:"required"`
+}
+
+// EndGame Called when a match ends by the game server
+func EndGame(c *gin.Context) {
+	var gameInfo GameInfo
+	if err := c.ShouldBindJSON(&gameInfo); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	var players []models.User
+	if err := database.DB.Where("game_id = ?", gameInfo.GameID).Find(&players).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Players not found"})
+		return
+	}
+
+	if err := database.DB.Model(&players).Update("game_id", nil).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to clear game association"})
+		return
+	}
+
+	for _, player := range players {
+		playerStats := make([]StatsInfo, 0)
+		for _, stat := range gameInfo.Stats {
+			if stat.UserUUID == player.UUID {
+				playerStats = append(playerStats, stat)
+			}
+		}
+
+		if len(playerStats) > 0 {
+			if err := UpdateStats(player.UUID, playerStats); err != nil {
+				log.Printf("Failed to update stats for player %s: %v", player.UUID, err)
+			}
+		}
+	}
+
+	if err := database.DB.Delete(&models.Game{}, gameInfo.GameID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Game not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Match ended"})
 }

@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.1/cdn/themes/light.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.1/cdn/shoelace-autoloader.js"></script>
+</head>
+<body>
+<div class="container">
+    <sl-card class="card-header" x-data="{ username: '', password: '', error: '' }">
+        <div slot="header">
+            <h1>Admin Login</h1>
+        </div>
+        <form @submit.prevent="if (!username || !password) { error = 'Both fields are required'; } else { $el.submit(); }" action="/admin/login" method="POST" class="form">
+            <div>
+                <label for="username">Username</label>
+                <input id="username" name="username" type="text" x-model="username" class="input" placeholder="Enter your username">
+            </div>
+            <div>
+                <label for="password">Password</label>
+                <input id="password" name="password" type="password" x-model="password" class="input" placeholder="Enter your password">
+            </div>
+            <p class="error" x-text="error"></p>
+            <button type="submit" class="btn">Login</button>
+        </form>
+    </sl-card>
+</div>
+</body>
+</html>
