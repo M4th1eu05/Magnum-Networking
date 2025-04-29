@@ -1,5 +1,9 @@
 #include "../inc/DedicatedServer.h"
 
+#include <sstream>
+
+#include "World.h"
+
 DedicatedServer::DedicatedServer(const uint16_t port, const size_t maxClients) {
     if (enet_initialize() != 0) {
         throw std::runtime_error("Failed to initialize ENet6.");
@@ -76,4 +80,21 @@ void DedicatedServer::serverLoop() {
             }
         }
     }
+}
+
+// DedicatedServer.cpp
+void DedicatedServer::broadcastWorld(const World& world) const {
+    if (!_server) return;
+
+    // Serialize the world
+    std::ostringstream oss;
+    world.serialize(oss);
+    const std::string serializedData = oss.str();
+
+    // Create an ENet packet
+    ENetPacket* packet = enet_packet_create(serializedData.data(), serializedData.size(), ENET_PACKET_FLAG_RELIABLE);
+
+    // Broadcast the packet to all connected peers
+    enet_host_broadcast(_server, 0, packet);
+    enet_host_flush(_server);
 }

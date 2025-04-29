@@ -7,6 +7,8 @@
 #include <thread>
 #include <atomic>
 
+#include "World.h"
+
 class DedicatedServer {
 public:
     DedicatedServer(uint16_t port, size_t maxClients);
@@ -14,6 +16,8 @@ public:
 
     void start();
     void stop();
+
+    void broadcastWorld(const World &world) const;
 
 private:
     void serverLoop();

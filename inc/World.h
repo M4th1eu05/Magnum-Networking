@@ -42,10 +42,13 @@ public:
     void deserialize(std::istream& is) override {
         size_t objectCount;
         is.read(reinterpret_cast<char*>(&objectCount), sizeof(objectCount));
+
+        if (objectCount > _objects.size()) {
+            throw std::runtime_error("Deserialized object count exceeds the current object list size.");
+        }
+
         for (size_t i = 0; i < objectCount; ++i) {
-            auto object = std::make_shared<GameObject>();
-            object->deserialize(is);
-            addObject(object);
+            _objects[i]->deserialize(is);
         }
     }
 

@@ -1,7 +1,9 @@
 // Client.cpp
 #include "Client.h"
 
-Client::Client() {
+#include <sstream>
+
+Client::Client(){
     if (enet_initialize() != 0) {
         throw std::runtime_error("Failed to initialize ENet.");
     }
@@ -77,6 +79,10 @@ void Client::clientLoop() {
                 case ENET_EVENT_TYPE_RECEIVE:
                     std::cout << "Message from server: "
                               << reinterpret_cast<char*>(event.packet->data) << std::endl;
+
+                    if (_world) {
+                        updateWorldFromServer(std::string(reinterpret_cast<char*>(event.packet->data), event.packet->dataLength));
+                    }
                     enet_packet_destroy(event.packet);
                     break;
 
@@ -85,4 +91,11 @@ void Client::clientLoop() {
             }
         }
     }
+}
+
+void Client::updateWorldFromServer(const std::string& serializedData) const {
+    if (!_world) return;
+
+    std::istringstream iss(serializedData);
+    _world->deserialize(iss);
 }

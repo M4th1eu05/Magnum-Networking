@@ -75,14 +75,16 @@ public:
         // Write position, rotation, and scale to the stream
         os.write(reinterpret_cast<const char*>(&position), sizeof(position));
         os.write(reinterpret_cast<const char*>(&rotation), sizeof(rotation));
-        os.write(reinterpret_cast<const char*>(&scale), sizeof(scale));
+        os.write(reinterpret_cast<const char*>(&scale), sizeof(scale)); // not necessary but for completeness
 
+        /*
         // Serialize GameObject data
         size_t componentCount = components.size();
         os.write(reinterpret_cast<const char*>(&componentCount), sizeof(componentCount));
         for (const auto& component : components) {
             component->serialize(os);
         }
+        */
     }
 
     void deserialize(std::istream& is) override {
@@ -98,6 +100,7 @@ public:
         // Apply the deserialized transformation to the GameObject
         this->setTransformation(Matrix4::from(rotation.toMatrix(), position) * Matrix4::scaling(scale));
 
+        /*
         // Deserialize GameObject components
         size_t componentCount;
         is.read(reinterpret_cast<char*>(&componentCount), sizeof(componentCount));
@@ -106,6 +109,7 @@ public:
             //auto component = createComponentFromStream(is);
             //addComponentInternal(component);
         }
+        */
     }
 
     /*

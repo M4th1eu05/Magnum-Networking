@@ -131,7 +131,7 @@ namespace Game {
         {
             const Vector2 dpiScaling = this->dpiScaling({});
             Configuration conf;
-            conf.setTitle("Server Game App")
+            conf.setTitle("Client Game App")
                     .setSize(conf.size(), dpiScaling);
             GLConfiguration glConf;
             glConf.setSampleCount(dpiScaling.max() < 2.0f ? 8 : 2);
@@ -152,6 +152,8 @@ namespace Game {
                 GL::Renderer::BlendFunction::OneMinusSourceAlpha);
         }
 
+
+        _world = std::make_shared<World>(_timeline);
         _client = std::make_shared<Client>();
         try {
             _client->connect("localhost", 5555);
@@ -159,9 +161,7 @@ namespace Game {
         catch (const std::exception &e) {
             std::cerr << "Failed to connect to server: " << e.what() << std::endl;
         }
-
-
-        _world = std::make_shared<World>(_timeline);
+        _client->setWorld(_world);
 
         /* Camera setup */
         _cameraRig = _world->createGameObject();
@@ -213,8 +213,8 @@ namespace Game {
         /* Create the ground */
         //auto *ground = new RigidBody{&_scene, 0.0f, &_bGroundShape, _bWorld};
         const std::shared_ptr<GameObject> ground = _world->createGameObject();
-        ground->addComponent<Collider>(reinterpret_cast<btCollisionShape*>(&_bGroundShape));
-        ground->addComponent<Rigidbody>(0.0f);
+        //ground->addComponent<Collider>(reinterpret_cast<btCollisionShape*>(&_bGroundShape));
+        //ground->addComponent<Rigidbody>(0.0f);
 
         new ColoredDrawable{
             *ground, _boxInstanceData, 0xffffff_rgbf,
@@ -227,10 +227,10 @@ namespace Game {
             for (Int j = 0; j != 10; ++j) {
                 for (Int k = 0; k != 5; ++k) {
                     const std::shared_ptr<GameObject> newBox = _world->createGameObject();
-                    auto collider = newBox->addComponent<Collider>(reinterpret_cast<btCollisionShape*>(&_bBoxShape));
-                    const auto rb = newBox->addComponent<Rigidbody>(1.0f);
+                    //auto collider = newBox->addComponent<Collider>(reinterpret_cast<btCollisionShape*>(&_bBoxShape));
+                    //const auto rb = newBox->addComponent<Rigidbody>(1.0f);
                     newBox->translate({i + 1.0f , j + 5.0f, k + 1.0f});
-                    rb->syncPose();
+                    //rb->syncPose();
                     new ColoredDrawable{
                         *newBox, _boxInstanceData,
                         Color3::fromHsv({hue += 137.5_degf, 0.75f, 0.9f}),

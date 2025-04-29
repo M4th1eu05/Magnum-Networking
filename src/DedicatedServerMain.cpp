@@ -318,6 +318,10 @@ namespace Game {
         GL::Renderer::disable(GL::Renderer::Feature::ScissorTest);
         GL::Renderer::disable(GL::Renderer::Feature::Blending);
 
+        if (_server) {
+            _server->broadcastWorld(*_world);
+        }
+
         swapBuffers();
         _timeline.nextFrame();
         redraw();
