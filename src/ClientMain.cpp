@@ -154,7 +154,7 @@ namespace Game {
 
         _client = std::make_shared<Client>();
         try {
-            _client->connect("ReplaceThisWithComputerName", 5555);
+            _client->connect("localhost", 5555);
         }
         catch (const std::exception &e) {
             std::cerr << "Failed to connect to server: " << e.what() << std::endl;
