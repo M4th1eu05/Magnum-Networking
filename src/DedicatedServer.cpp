@@ -16,6 +16,10 @@ DedicatedServer::DedicatedServer(const uint16_t port, const size_t maxClients) {
     }
 
     std::cout << "Server initialized on port " << port << std::endl;
+    // log address
+    char addressString[65];
+    enet_address_get_host(&_address, addressString, sizeof(addressString));
+    std::cout << "Server address: " << addressString << ":" << port << std::endl;
 }
 
 DedicatedServer::~DedicatedServer() {
