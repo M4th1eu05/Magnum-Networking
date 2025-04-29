@@ -6,7 +6,7 @@
 
 #include <iostream>
 
-Rigidbody::Rigidbody(const Float mass, btCollisionShape *bShape, const std::shared_ptr<World2> &world, const std::shared_ptr<GameObject> &gameObject)
+Rigidbody::Rigidbody(const Float mass, btCollisionShape *bShape, const std::shared_ptr<World> &world, const std::shared_ptr<GameObject> &gameObject)
 : BaseComponent(gameObject), _bWorld(world->getBulletWorld()) {
     /* Calculate inertia so the object reacts as it should with rotation and everything */
     btVector3 bInertia(0.0f, 0.0f, 0.0f);

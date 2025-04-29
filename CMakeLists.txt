@@ -6,13 +6,7 @@ set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/modules/" ${CMAKE_MODULE_PATH})
 # Activer C++ 17
 set(CMAKE_CXX_STANDARD 17)
 
-# Add exe server
-add_executable(Server src/server.cpp)
-target_link_libraries(Server PRIVATE enet)
-
-# Add exe client
-add_executable(Client src/client.cpp)
-target_link_libraries(Client PRIVATE enet)
+add_subdirectory("externals/enet6")
 
 add_subdirectory(externals)
 find_package(Magnum REQUIRED
@@ -90,10 +84,21 @@ target_link_libraries(BulletExample PRIVATE
         enet6
 )
 
-add_subdirectory("externals/enet6" "externals/enet6/build")
+
+# Add exe server
+add_executable(Server src/server.cpp)
+target_link_libraries(Server PRIVATE enet6)
+
+# Add exe client
+add_executable(Client src/client.cpp)
+target_link_libraries(Client PRIVATE enet6)
+
+
 add_executable(TestEnet6 src/test_enet6.cpp)
-target_link_libraries(TestEnet6 PRIVATE enet6)
-target_include_directories(TestEnet6 PRIVATE "externals/enet6/include")
-target_include_directories(MagnumBootstrap PRIVATE externals/enet6/include)
+target_link_libraries(TestEnet6 PRIVATE ${CMAKE_SOURCE_DIR}/externals/enet6/build/libenet.a)
+target_include_directories(Server PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/externals/enet6/include)
+target_include_directories(Client PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/externals/enet6/include)
+target_include_directories(TestEnet6 PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/externals/enet6/include)
+target_include_directories(MagnumBootstrap PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/externals/enet6/include)
 
 
