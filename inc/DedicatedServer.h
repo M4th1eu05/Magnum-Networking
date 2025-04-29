@@ -7,6 +7,7 @@
 #include <thread>
 #include <atomic>
 
+#include "MessageType.h"
 #include "World.h"
 
 class DedicatedServer {
@@ -17,6 +18,7 @@ public:
     void start();
     void stop();
 
+    void broadcastMessage(MessageType messageType, const std::string& data) const;
     void broadcastWorld(const World &world) const;
 
 private:

@@ -13,6 +13,8 @@
 #include "Magnum/SceneGraph/MatrixTransformation3D.h"
 #include "Magnum/SceneGraph/Scene.h"
 
+class DedicatedServer;
+
 using namespace Magnum;
 typedef SceneGraph::Scene<SceneGraph::MatrixTransformation3D> Scene3D;
 
@@ -52,11 +54,14 @@ public:
         }
     }
 
+    void setServer(const std::shared_ptr<DedicatedServer> &server) { _server = server; }
+
 public:
     BulletIntegration::DebugDraw _debugDraw{NoCreate};
 
 private:
     Timeline& _timeline;
+    std::shared_ptr<DedicatedServer> _server = nullptr;
 
     Scene3D _scene;
     std::vector<std::shared_ptr<GameObject>> _objects;

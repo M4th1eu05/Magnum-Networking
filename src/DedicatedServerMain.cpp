@@ -161,6 +161,7 @@ namespace Game {
         _server->start();
 
         _world = std::make_shared<World>(_timeline);
+        _world->setServer(_server);
 
         /* Camera setup */
         _cameraRig = _world->createGameObject();

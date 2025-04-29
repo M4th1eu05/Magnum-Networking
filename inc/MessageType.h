@@ -1,0 +1,12 @@
+// MessageType.h
+#ifndef MESSAGETYPE_H
+#define MESSAGETYPE_H
+
+enum class MessageType {
+    CREATE_GAMEOBJECT,
+    UPDATE_GAMEOBJECT,
+    DELETE_GAMEOBJECT,
+    UPDATE_WORLD,
+};
+
+#endif // MESSAGETYPE_H

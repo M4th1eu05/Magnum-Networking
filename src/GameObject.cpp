@@ -6,6 +6,7 @@
 
 #include <iostream>
 
+int GameObject::_nextId = 0;
 
 void GameObject::start() {
     for (std::shared_ptr<BaseComponent>& component : components) {

@@ -66,6 +66,8 @@ public:
     }
 
     void serialize(std::ostream& os) const override {
+        os.write(reinterpret_cast<const char*>(&_id), sizeof(_id));
+
         // Serialize transformation data
         Matrix4 transformationMatrix = this->transformationMatrix();
         const Vector3 position = transformationMatrix.translation();
@@ -88,6 +90,8 @@ public:
     }
 
     void deserialize(std::istream& is) override {
+        is.read(reinterpret_cast<char*>(&_id), sizeof(_id));
+
         // Deserialize transformation data
         Vector3 position;
         Quaternion rotation;
@@ -158,6 +162,10 @@ private:
 
 private:
     std::vector<std::shared_ptr<BaseComponent>> components;
+
+    static int _nextId; // Static counter for unique IDs
+    int _id;            // Unique ID for this GameObject
+
 protected:
     std::shared_ptr<World> _world;
 };
