@@ -1,25 +1,31 @@
-//
-// Created by mathi on 29/04/2025.
-//
-
+// Client.h
 #ifndef CLIENT_H
 #define CLIENT_H
-#include <string>
-#include <iostream>
+
 #include <enet6/enet.h>
+#include <iostream>
+#include <string>
+#include <thread>
+#include <atomic>
 
 class Client {
 public:
     Client();
+
     ~Client();
 
-    bool initialize();
-    bool connectToServer(const std::string& host, enet_uint16 port);
-    void cleanup();
+    void connect(const std::string &host, uint16_t port);
+    void disconnect();
+    void sendMessage(const std::string& message);
 
 private:
-    ENetHost* client;
-    ENetPeer* peer;
+    void clientLoop();
+
+    ENetAddress _address;
+    ENetHost* _client = nullptr;
+    ENetPeer* _peer = nullptr;
+    std::atomic<bool> _connected{false};
+    std::thread _clientThread;
 };
 
-#endif //CLIENT_H
+#endif // CLIENT_H

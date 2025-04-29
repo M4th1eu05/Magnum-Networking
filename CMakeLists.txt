@@ -136,6 +136,15 @@ add_executable(Client
         src/ClientMain.cpp
         src/Client.cpp
         inc/Client.h
+        src/World.cpp
+        src/GameObject.cpp
+        src/Components/BaseComponent.cpp
+        inc/ILifeCycle.h
+        src/Components/Rigidbody.cpp
+        inc/Components/Rigidbody.h
+        inc/Components/ISerializable.h
+        src/Components/Collider.cpp
+        inc/Components/Collider.h
 )
 
 target_include_directories(Client PUBLIC inc ${enet6_SOURCE_DIR}/include)

@@ -41,27 +41,7 @@ using namespace Math::Literals;
 typedef SceneGraph::Object<SceneGraph::MatrixTransformation3D> Object3D;
 typedef SceneGraph::Scene<SceneGraph::MatrixTransformation3D> Scene3D;
 
-/*
-int main() {
-    try {
-        const uint16_t port = 1234; // Example port
-        const size_t maxClients = 32; // Example max clients
 
-        DedicatedServer server(port, maxClients);
-        server.start();
-
-        std::cout << "Press Enter to stop the server..." << std::endl;
-        std::cin.get();
-
-        server.stop();
-    } catch (const std::exception& e) {
-        std::cerr << "Error: " << e.what() << std::endl;
-        return EXIT_FAILURE;
-    }
-
-    return EXIT_SUCCESS;
-}
-*/
 namespace Game {
 
     struct InstanceData {
@@ -178,6 +158,7 @@ namespace Game {
         }
 
         _server = std::make_shared<DedicatedServer>(5555, 4);
+        _server->start();
 
         _world = std::make_shared<World>(_timeline);
 

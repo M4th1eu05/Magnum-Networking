@@ -1,93 +1,88 @@
-
-
+// Client.cpp
 #include "Client.h"
 
-
-Client::Client() : client(nullptr), peer(nullptr)
-{
-
-}
-
-bool Client::initialize() {
+Client::Client() {
     if (enet_initialize() != 0) {
-        std::cerr << "An error occurred while initializing ENet." << std::endl;
-        return false;
-    }
-    return true;
-}
-
-bool Client::connectToServer(const std::string& host, enet_uint16 port) {
-    ENetAddress address;
-    enet_address_set_host(&address, ENET_ADDRESS_TYPE_ANY, host.c_str());
-    address.port = port;
-
-    client = enet_host_create(address.type, nullptr, 1, 2, 0, 0);
-    if (!client) {
-        std::cerr << "Failed to create ENet client host." << std::endl;
-        return false;
+        throw std::runtime_error("Failed to initialize ENet.");
     }
 
-    peer = enet_host_connect(client, &address, 2, 0);
-    if (!peer) {
-        std::cerr << "No available peers for initiating an ENet connection." << std::endl;
-        return false;
-    }
-
-    ENetEvent event;
-    if (enet_host_service(client, &event, 5000) > 0 && event.type == ENET_EVENT_TYPE_CONNECT) {
-        std::cout << "Connection to " << host << ":" << port << " succeeded." << std::endl;
-        return true;
-    } else {
-        enet_peer_reset(peer);
-        std::cerr << "Connection to " << host << ":" << port << " failed." << std::endl;
-        return false;
+    // Create the ENet client host without resolving any address yet
+    _client = enet_host_create(ENET_ADDRESS_TYPE_ANY, nullptr, 1, 2, 0, 0);
+    if (!_client) {
+        throw std::runtime_error("Failed to create ENet client host.");
     }
 }
 
-// not sure about that
-// void Client::synchronizeTime() {
-//     auto start = std::chrono::high_resolution_clock::now();
-//
-//     // Send a time synchronization request
-//     ENetPacket* packet = enet_packet_create("TIME_SYNC", strlen("TIME_SYNC") + 1, ENET_PACKET_FLAG_RELIABLE);
-//     enet_peer_send(peer, 0, packet);
-//
-//     // Wait for the server's response
-//     ENetEvent event;
-//     if (enet_host_service(client, &event, 5000) > 0 && event.type == ENET_EVENT_TYPE_RECEIVE) {
-//         auto end = std::chrono::high_resolution_clock::now();
-//         auto rtt = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-//
-//         std::string serverTime((char*)event.packet->data);
-//         std::cout << "Server time: " << serverTime << ", RTT: " << rtt << " ms" << std::endl;
-//
-//         enet_packet_destroy(event.packet);
-//     } else {
-//         std::cerr << "Time synchronization failed." << std::endl;
-//     }
-// }
-
-// void Client::receiveSnapshot(std::shared_ptr<World> world) {
-//     ENetEvent event;
-//     while (enet_host_service(client, &event, 1000) > 0) {
-//         switch (event.type) {
-//             case ENET_EVENT_TYPE_RECEIVE:
-//                 std::string snapshot(static_cast<char *>(event.packet->data), event.packet->dataLength);
-//                 world->deserialize(snapshot);
-//                 enet_packet_destroy(event.packet);
-//                 break;
-//             case ENET_EVENT_TYPE_DISCONNECT:
-//                 std::cout << "Disconnected from server." << std::endl;
-//                 return;
-//             default:
-//                 break;
-//         }
-//     }
-// }
-
-void Client::cleanup() {
-    if (client) {
-        enet_host_destroy(client);
+Client::~Client() {
+    disconnect();
+    if (_client) {
+        enet_host_destroy(_client);
     }
     enet_deinitialize();
+}
+
+void Client::connect(const std::string& host, const uint16_t port) {
+    if (_connected) return;
+
+    // Resolve the address and set the port
+    enet_address_set_host(&_address, ENET_ADDRESS_TYPE_ANY, host.c_str());
+    _address.port = port;
+
+    // Create a peer and initiate the connection
+    _peer = enet_host_connect(_client, &_address, 2, 0);
+    if (!_peer) {
+        throw std::runtime_error("No available peers for initiating an ENet connection.");
+    }
+
+    // Wait for the connection to succeed
+    ENetEvent event;
+    if (enet_host_service(_client, &event, 5000) > 0 && event.type == ENET_EVENT_TYPE_CONNECT) {
+        _connected = true;
+        _clientThread = std::thread(&Client::clientLoop, this);
+        std::cout << "Connected to " << host << ":" << port << std::endl;
+    } else {
+        enet_peer_reset(_peer);
+        _peer = nullptr;
+        throw std::runtime_error("Connection to " + host + ":" + std::to_string(port) + " failed.");
+    }
+}
+
+void Client::disconnect() {
+    if (!_connected) return;
+
+    _connected = false;
+    if (_clientThread.joinable()) {
+        _clientThread.join();
+    }
+
+    if (_peer) {
+        enet_peer_disconnect(_peer, 0);
+        _peer = nullptr;
+    }
+    std::cout << "Disconnected from server." << std::endl;
+}
+
+void Client::sendMessage(const std::string& message) {
+    if (!_connected || !_peer) return;
+
+    ENetPacket* packet = enet_packet_create(message.c_str(), message.size() + 1, ENET_PACKET_FLAG_RELIABLE);
+    enet_peer_send(_peer, 0, packet);
+}
+
+void Client::clientLoop() {
+    while (_connected) {
+        ENetEvent event;
+        while (enet_host_service(_client, &event, 1000) > 0) {
+            switch (event.type) {
+                case ENET_EVENT_TYPE_RECEIVE:
+                    std::cout << "Message from server: "
+                              << reinterpret_cast<char*>(event.packet->data) << std::endl;
+                    enet_packet_destroy(event.packet);
+                    break;
+
+                default:
+                    break;
+            }
+        }
+    }
 }
