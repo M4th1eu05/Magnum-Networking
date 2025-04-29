@@ -40,8 +40,7 @@ add_executable(MagnumBootstrap
         inc/Components/ISerializable.h
         src/Components/Collider.cpp
         inc/Components/Collider.h
-        src/DedicatedServer.cpp
-        inc/DedicatedServer.h)
+)
 
 
 target_include_directories(MagnumBootstrap PUBLIC inc inc/Components)
@@ -98,9 +97,36 @@ add_executable(DedicatedServer
         src/DedicatedServerMain.cpp
         src/DedicatedServer.cpp
         inc/DedicatedServer.h
+        src/World.cpp
+        src/GameObject.cpp
+        src/Components/BaseComponent.cpp
+        inc/ILifeCycle.h
+        src/Components/Rigidbody.cpp
+        inc/Components/Rigidbody.h
+        inc/Components/ISerializable.h
+        src/Components/Collider.cpp
+        inc/Components/Collider.h
 )
 
 target_include_directories(DedicatedServer PUBLIC inc ${enet6_SOURCE_DIR}/include)
 
 target_link_libraries(DedicatedServer PRIVATE enet)
 set_property(TARGET DedicatedServer PROPERTY CXX_STANDARD 20)
+target_link_libraries(DedicatedServer PRIVATE
+        Magnum::Application
+        Magnum::GL
+        Magnum::Magnum
+        Magnum::MeshTools
+        Magnum::Primitives
+        Magnum::SceneGraph
+        Magnum::Shaders
+        Magnum::Trade
+        MagnumIntegration::Bullet
+        Bullet::Dynamics
+        MagnumIntegration::ImGui
+        BulletDynamics
+        BulletCollision
+        LinearMath
+        Bullet3Common
+        nlohmann_json
+)

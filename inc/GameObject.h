@@ -6,12 +6,13 @@
 #define GAMEOBJECT_H
 
 
-#include <BaseComponent.h>
+#include <Components/BaseComponent.h>
 #include <memory>
 #include <Magnum/SceneGraph/MatrixTransformation3D.h>
 #include <Magnum/SceneGraph/Scene.h>
 
 #include "ILifeCycle.h"
+#include "Components/ISerializable.h"
 #include "Magnum/Math/Quaternion.h"
 
 class World;
