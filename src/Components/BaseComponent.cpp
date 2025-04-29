@@ -2,7 +2,7 @@
 // Created by Tarook on 18/03/2025.
 //
 
-#include "BaseComponent.h"
+#include "Components/BaseComponent.h"
 
 
 void BaseComponent::serialize(std::ostream &os) const {

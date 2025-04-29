@@ -1,6 +1,6 @@
 #pragma once
 
-#include <BaseComponent.h>
+#include <Components/BaseComponent.h>
 #include <GameObject.h>
 #include <World.h>
 
