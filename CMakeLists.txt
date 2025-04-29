@@ -41,7 +41,9 @@ add_executable(MagnumBootstrap
         src/Components/Collider.cpp
         inc/Components/Collider.h
         src/DedicatedServer.cpp
-        inc/DedicatedServer.h)
+        inc/DedicatedServer.h
+        src/Client.cpp
+)
 
 
 target_include_directories(MagnumBootstrap PUBLIC inc inc/Components)
@@ -104,3 +106,13 @@ target_include_directories(DedicatedServer PUBLIC inc ${enet6_SOURCE_DIR}/includ
 
 target_link_libraries(DedicatedServer PRIVATE enet)
 set_property(TARGET DedicatedServer PROPERTY CXX_STANDARD 20)
+
+add_executable(Client
+        src/Client.cpp
+        inc/Client.h
+)
+
+target_include_directories(Client PUBLIC inc ${enet6_SOURCE_DIR}/include)
+
+target_link_libraries(Client PRIVATE enet)
+set_property(TARGET Client PROPERTY CXX_STANDARD 20)

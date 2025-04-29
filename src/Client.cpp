@@ -1,6 +1,6 @@
 
 
-#include <iostream>
+#include "Client.h"
 
 
 class Client {
@@ -90,10 +90,6 @@ public:
         }
         enet_deinitialize();
     }
-
-private:
-    ENetHost* client;
-    ENetPeer* peer;
 };
 
 int main() {
