@@ -93,3 +93,14 @@ target_link_libraries(BulletExample PRIVATE
 # Link enet6 to your target
 target_link_libraries(MagnumBootstrap PRIVATE enet)
 target_link_libraries(BulletExample PRIVATE enet)
+
+add_executable(DedicatedServer
+        src/DedicatedServerMain.cpp
+        src/DedicatedServer.cpp
+        inc/DedicatedServer.h
+)
+
+target_include_directories(DedicatedServer PUBLIC inc ${enet6_SOURCE_DIR}/include)
+
+target_link_libraries(DedicatedServer PRIVATE enet)
+set_property(TARGET DedicatedServer PROPERTY CXX_STANDARD 20)
