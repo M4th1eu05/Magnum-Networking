@@ -39,11 +39,14 @@ add_executable(MagnumBootstrap
         inc/Components/Rigidbody.h
         inc/Components/ISerializable.h
         src/Components/Collider.cpp
-        inc/Components/Collider.h)
-
+        inc/Components/Collider.h
+        src/DedicatedServer.cpp
+        inc/DedicatedServer.h)
 
 
 target_include_directories(MagnumBootstrap PUBLIC inc inc/Components)
+target_include_directories(MagnumBootstrap PUBLIC inc inc ${enet6_SOURCE_DIR}/include)
+
 
 set_property(TARGET MagnumBootstrap PROPERTY CXX_STANDARD 20)
 target_link_libraries(MagnumBootstrap PRIVATE

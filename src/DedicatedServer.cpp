@@ -1,0 +1,81 @@
+//
+// Created by Tarook on 28/04/2025.
+//
+
+#include "../inc/DedicatedServer.h"
+// DedicatedServer.cpp
+#include "DedicatedServer.h"
+
+DedicatedServer::DedicatedServer(const uint16_t port, const size_t maxClients) {
+    if (enet_initialize() != 0) {
+        throw std::runtime_error("Failed to initialize ENet6.");
+    }
+
+    // Configure the address for dual-stack (IPv4 and IPv6)
+    enet_address_build_any(&_address, ENET_ADDRESS_TYPE_IPV6);
+    _address.port = port;
+
+    // Create the server host
+    _server = enet_host_create(ENET_ADDRESS_TYPE_ANY, &_address, maxClients, 2, 0, 0);
+    if (!_server) {
+        throw std::runtime_error("Failed to create ENet6 server host.");
+    }
+
+    std::cout << "Server initialized on port " << port << std::endl;
+}
+
+DedicatedServer::~DedicatedServer() {
+    stop();
+    if (_server) {
+        enet_host_destroy(_server);
+    }
+    enet_deinitialize();
+}
+
+void DedicatedServer::start() {
+    if (_running) return;
+
+    _running = true;
+    _serverThread = std::thread(&DedicatedServer::serverLoop, this);
+    std::cout << "Server started." << std::endl;
+}
+
+void DedicatedServer::stop() {
+    if (!_running) return;
+
+    _running = false;
+    if (_serverThread.joinable()) {
+        _serverThread.join();
+    }
+    std::cout << "Server stopped." << std::endl;
+}
+
+void DedicatedServer::serverLoop() {
+    while (_running) {
+        ENetEvent event;
+        while (enet_host_service(_server, &event, 1000) > 0) {
+            switch (event.type) {
+                case ENET_EVENT_TYPE_CONNECT:
+                    std::cout << "Client connected." << std::endl;
+                    break;
+
+                case ENET_EVENT_TYPE_RECEIVE:
+                    std::cout << "Message received: "
+                              << reinterpret_cast<char*>(event.packet->data) << std::endl;
+                    enet_packet_destroy(event.packet);
+                    break;
+
+                case ENET_EVENT_TYPE_DISCONNECT:
+                    std::cout << "Client disconnected." << std::endl;
+                    break;
+
+                case ENET_EVENT_TYPE_DISCONNECT_TIMEOUT:
+                    std::cout << "Client disconnected due to timeout." << std::endl;
+                    break;
+
+                default:
+                    break;
+            }
+        }
+    }
+}
