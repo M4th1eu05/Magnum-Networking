@@ -131,7 +131,9 @@ target_link_libraries(DedicatedServer PRIVATE
         nlohmann_json
 )
 
+
 add_executable(Client
+        src/ClientMain.cpp
         src/Client.cpp
         inc/Client.h
 )
@@ -140,3 +142,21 @@ target_include_directories(Client PUBLIC inc ${enet6_SOURCE_DIR}/include)
 
 target_link_libraries(Client PRIVATE enet)
 set_property(TARGET Client PROPERTY CXX_STANDARD 20)
+target_link_libraries(Client PRIVATE
+        Magnum::Application
+        Magnum::GL
+        Magnum::Magnum
+        Magnum::MeshTools
+        Magnum::Primitives
+        Magnum::SceneGraph
+        Magnum::Shaders
+        Magnum::Trade
+        MagnumIntegration::Bullet
+        Bullet::Dynamics
+        MagnumIntegration::ImGui
+        BulletDynamics
+        BulletCollision
+        LinearMath
+        Bullet3Common
+        nlohmann_json
+)

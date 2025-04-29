@@ -5,8 +5,8 @@
 #ifndef CLIENT_H
 #define CLIENT_H
 #include <string>
-
-#include "../cmake-build-debug/_deps/enet6-src/include/enet6/types.h"
+#include <iostream>
+#include <enet6/enet.h>
 
 class Client {
 public:

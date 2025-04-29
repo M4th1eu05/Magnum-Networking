@@ -1,10 +1,4 @@
-//
-// Created by Tarook on 28/04/2025.
-//
-
 #include "../inc/DedicatedServer.h"
-// DedicatedServer.cpp
-#include "DedicatedServer.h"
 
 DedicatedServer::DedicatedServer(const uint16_t port, const size_t maxClients) {
     if (enet_initialize() != 0) {
