@@ -1,0 +1,103 @@
+name: XMake build
+
+permissions:
+  contents: write
+
+on:
+  pull_request:
+  push:
+      paths-ignore:
+        - '.gitignore'
+        - 'LICENSE'
+        - 'README.md'
+
+jobs:
+  xmake-build:
+    name: ${{ matrix.config.plat }} ${{ matrix.config.arch }} ${{ matrix.mode }} ${{ matrix.kind }}
+    runs-on: ${{ matrix.config.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+        - { runner: windows-latest, plat: windows,  arch: x86 }
+        - { runner: windows-latest, plat: windows,  arch: x64 }
+        - { runner: windows-latest, plat: windows,  arch: arm64 }
+        - { runner: windows-latest, plat: mingw,    arch: i386,   msys_arch: i686,   msys_msystem: mingw32 }
+        - { runner: windows-latest, plat: mingw,    arch: x86_64, msys_arch: x86_64, msys_msystem: mingw64 }
+        - { runner: ubuntu-latest,  plat: linux,    arch: x86_64 }
+        - { runner: ubuntu-latest,  plat: android,  arch: x86 }
+        - { runner: ubuntu-latest,  plat: android,  arch: x86_64 }
+        - { runner: ubuntu-latest,  plat: android,  arch: armeabi-v7a }
+        - { runner: ubuntu-latest,  plat: android,  arch: arm64-v8a }
+        - { runner: macos-14,       plat: macosx,   arch: x86_64 }
+        - { runner: macos-14,       plat: macosx,   arch: arm64 }
+        - { runner: macos-14,       plat: iphoneos, arch: x86_64 }
+        - { runner: macos-14,       plat: iphoneos, arch: arm64 }
+        mode: [debug, release]
+        kind: [shared, static]
+    defaults:
+      run:
+        shell: ${{ matrix.config.plat == 'mingw' && 'msys2 {0}' || 'bash' }}
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: "Set OUTPUT_FILE variable"
+      run: echo "OUTPUT_FILE=enet6-${{ matrix.config.plat }}_${{ matrix.config.arch }}_${{ matrix.mode }}_${{ matrix.kind }}${{ (matrix.config.plat == 'windows' || matrix.config.plat == 'mingw') && '.zip' || '.tar.gz' }}" >> $GITHUB_ENV
+      shell: bash
+
+    - name: Setup xmake (!MinGW)
+      # This action also works with MinGW but is slower (compiles from source)
+      if: ${{ matrix.config.plat != 'mingw' }}
+      uses: xmake-io/github-action-setup-xmake@v1
+
+    - name: Setup MSys2 (MinGW)
+      if: ${{ matrix.config.plat == 'mingw' }}
+      uses: msys2/setup-msys2@v2
+      with:
+        msystem: ${{ matrix.config.msys_msystem }}
+        install: base-devel git unzip p7zip mingw-w64-${{ matrix.config.msys_arch }}-toolchain mingw-w64-${{ matrix.config.msys_arch }}-xmake
+        update: true
+
+    - name: Download NDK (Android)
+      if: ${{ matrix.config.plat == 'android' }}
+      run: |
+        wget -q https://dl.google.com/android/repository/android-ndk-r25c-linux.zip
+        unzip -q -o ./android-ndk-r25c-linux.zip
+
+    - name: Configure (!Android)
+      if: ${{ matrix.config.plat != 'android' && matrix.config.plat != 'mingw' }}
+      run: xmake config --plat=${{ matrix.config.plat }} --arch=${{ matrix.config.arch }} --mode=${{ matrix.mode }} --kind=${{ matrix.kind }} --yes
+
+    - name: Configure (Android)
+      if: ${{ matrix.config.plat == 'android' }}
+      run: xmake config --ndk=`pwd`/android-ndk-r25c --ndk_sdkver=28 --plat=${{ matrix.config.plat }} --arch=${{ matrix.config.arch }} --mode=${{ matrix.mode }} --kind=${{ matrix.kind }} --yes
+
+    - name: Build
+      run: xmake
+
+    - name: Install
+      run: xmake install -v -o enet6/
+
+    # For some reason macOS-14 doesn't seem to have Python
+    - uses: actions/setup-python@v5
+      if: ${{ matrix.config.runner == 'macos-14' }}
+      with:
+        python-version: "3.11"
+
+    - name: Archive result
+      uses: ihiroky/archive-action@v1
+      with:
+        root_dir: enet6/
+        file_path: ${{ env.OUTPUT_FILE }}
+        verbose: true
+
+    # Release tags (for tags)
+    - name: Upload binaries to release (Tag)
+      uses: svenstaro/upload-release-action@v2
+      if: ${{ startsWith(github.event.ref, 'refs/tags/') && matrix.mode == 'release' }}
+      with:
+        repo_token: ${{ secrets.GITHUB_TOKEN }}
+        file: ${{ env.OUTPUT_FILE }}
+        asset_name: ${{ env.OUTPUT_FILE }}
+        tag: ${{ github.ref }}
