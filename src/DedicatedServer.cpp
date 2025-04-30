@@ -42,16 +42,7 @@ void DedicatedServer::start() {
 
     _running = true;
 
-    char ip[65];
-    if (enet_address_get_host(&_address, ip, sizeof(ip)) != 0) {
-        std::cerr << "Erreur lors de la récupération de l'adresse IP." << std::endl;
-    }
-
-    std::string fullAddress = ip + std::to_string(_address.port);
-    _apiHandler.POST("/server/register", fullAddress, [this](std::string response) {
-        _serverThread = std::thread(&DedicatedServer::serverLoop, this);
-        std::cout << "Server started." << std::endl;
-    });
+    _serverThread = std::thread(&DedicatedServer::serverLoop, this);
 }
 
 void DedicatedServer::stop() {
