@@ -3,7 +3,7 @@
 #define CLIENT_H
 
 #include <enet6/enet.h>
-#include <iostream>
+#include <curl/curl.h>
 #include <string>
 #include <thread>
 #include <atomic>

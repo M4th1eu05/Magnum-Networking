@@ -7,6 +7,7 @@
 #include <thread>
 #include <atomic>
 
+#include "APIHandler.h"
 #include "World.h"
 
 class DedicatedServer {
@@ -26,6 +27,7 @@ private:
     ENetHost* _server = nullptr;
     std::atomic<bool> _running{false};
     std::thread _serverThread;
+    APIHandler _apiHandler;
 };
 
 #endif // DEDICATEDSERVER_H

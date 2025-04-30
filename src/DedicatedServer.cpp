@@ -2,6 +2,7 @@
 
 #include <sstream>
 
+#include "APIHandler.h"
 #include "World.h"
 
 DedicatedServer::DedicatedServer(const uint16_t port, const size_t maxClients) {
@@ -24,6 +25,8 @@ DedicatedServer::DedicatedServer(const uint16_t port, const size_t maxClients) {
     char addressString[65];
     enet_address_get_host(&_address, addressString, sizeof(addressString));
     std::cout << "Server address: " << addressString << ":" << port << std::endl;
+
+    _apiHandler = APIHandler();
 }
 
 DedicatedServer::~DedicatedServer() {
@@ -38,8 +41,17 @@ void DedicatedServer::start() {
     if (_running) return;
 
     _running = true;
-    _serverThread = std::thread(&DedicatedServer::serverLoop, this);
-    std::cout << "Server started." << std::endl;
+
+    char ip[65];
+    if (enet_address_get_host(&_address, ip, sizeof(ip)) != 0) {
+        std::cerr << "Erreur lors de la récupération de l'adresse IP." << std::endl;
+    }
+
+    std::string fullAddress = ip + std::to_string(_address.port);
+    _apiHandler.POST("/server/register", fullAddress, [this](std::string response) {
+        _serverThread = std::thread(&DedicatedServer::serverLoop, this);
+        std::cout << "Server started." << std::endl;
+    });
 }
 
 void DedicatedServer::stop() {

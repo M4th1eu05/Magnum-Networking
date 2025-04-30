@@ -106,6 +106,8 @@ add_executable(DedicatedServer
         inc/Components/ISerializable.h
         src/Components/Collider.cpp
         inc/Components/Collider.h
+        src/APIHandler.cpp
+        inc/APIHandler.h
 )
 
 target_include_directories(DedicatedServer PUBLIC inc ${enet6_SOURCE_DIR}/include)
@@ -130,6 +132,7 @@ target_link_libraries(DedicatedServer PRIVATE
         Bullet3Common
         nlohmann_json
 )
+target_link_libraries(DedicatedServer PRIVATE cpr)
 
 
 add_executable(Client
@@ -145,11 +148,15 @@ add_executable(Client
         inc/Components/ISerializable.h
         src/Components/Collider.cpp
         inc/Components/Collider.h
+        src/APIHandler.cpp
+        inc/APIHandler.h
 )
 
 target_include_directories(Client PUBLIC inc ${enet6_SOURCE_DIR}/include)
 
 target_link_libraries(Client PRIVATE enet)
+target_link_libraries(Client PRIVATE cpr)
+
 set_property(TARGET Client PROPERTY CXX_STANDARD 20)
 target_link_libraries(Client PRIVATE
         Magnum::Application
