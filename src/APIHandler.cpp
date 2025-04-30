@@ -52,4 +52,3 @@ bool APIHandler::GET(const std::string &url, const std::function<void(std::strin
         return false;
     }
 }
-}
