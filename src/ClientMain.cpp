@@ -1,3 +1,5 @@
+#include "../inc/Client.h"
+#include <iostream>
 #include <btBulletDynamicsCommon.h>
 #include <Corrade/Containers/GrowableArray.h>
 #include <Corrade/Containers/Optional.h>
@@ -26,7 +28,8 @@
 #include <World.h>
 #include <nlohmann/json.hpp>
 
-#include "Rigidbody.h"
+#include "Components/Collider.h"
+#include "Components/Rigidbody.h"
 #include "Magnum/ImGuiIntegration/Context.hpp"
 
 using namespace Magnum;
@@ -36,17 +39,19 @@ typedef SceneGraph::Object<SceneGraph::MatrixTransformation3D> Object3D;
 typedef SceneGraph::Scene<SceneGraph::MatrixTransformation3D> Scene3D;
 
 namespace Game {
+
     struct InstanceData {
         Matrix4 transformationMatrix;
         Matrix3x3 normalMatrix;
         Color3 color;
     };
 
-    class GameApp : public Platform::Application {
-    public:
-        virtual ~GameApp() = default;
 
-        explicit GameApp(const Arguments &arguments);
+    class ClientGameApp : public Platform::Application {
+    public:
+        virtual ~ClientGameApp() = default;
+
+        explicit ClientGameApp(const Arguments &arguments);
 
     private:
         void drawEvent() override;
@@ -92,7 +97,9 @@ namespace Game {
         float _cameraMoveSpeed{0.1f};
 
         std::shared_ptr<World> _world;
+        std::shared_ptr<Client> _client;
     };
+
 
     class ColoredDrawable : public SceneGraph::Drawable3D {
     public:
@@ -118,13 +125,13 @@ namespace Game {
         Matrix4 _primitiveTransformation;
     };
 
-    GameApp::GameApp(const Arguments &arguments): Platform::Application(arguments, NoCreate) {
-        /* Try 8x MSAA, fall back to zero samples if not possible. Enable only 2x
-           MSAA if we have enough DPI. */
+
+    ClientGameApp::ClientGameApp(const Magnum::Platform::GlfwApplication::Arguments& args)
+    : Magnum::Platform::Application{args, NoCreate} {
         {
             const Vector2 dpiScaling = this->dpiScaling({});
             Configuration conf;
-            conf.setTitle("Epik cube gaming")
+            conf.setTitle("Client Game App")
                     .setSize(conf.size(), dpiScaling);
             GLConfiguration glConf;
             glConf.setSampleCount(dpiScaling.max() < 2.0f ? 8 : 2);
@@ -145,7 +152,11 @@ namespace Game {
                 GL::Renderer::BlendFunction::OneMinusSourceAlpha);
         }
 
+
         _world = std::make_shared<World>(_timeline);
+        _client = std::make_shared<Client>();
+        _client->setWorld(_world);
+
         /* Camera setup */
         _cameraRig = _world->createGameObject();
         _cameraRig->translate(Vector3::yAxis(3.0f)).rotateY(40.0_degf);
@@ -196,8 +207,8 @@ namespace Game {
         /* Create the ground */
         //auto *ground = new RigidBody{&_scene, 0.0f, &_bGroundShape, _bWorld};
         const std::shared_ptr<GameObject> ground = _world->createGameObject();
-        ground->addComponent<Collider>(reinterpret_cast<btCollisionShape*>(&_bGroundShape));
-        ground->addComponent<Rigidbody>(0.0f);
+        //ground->addComponent<Collider>(reinterpret_cast<btCollisionShape*>(&_bGroundShape));
+        //ground->addComponent<Rigidbody>(0.0f);
 
         new ColoredDrawable{
             *ground, _boxInstanceData, 0xffffff_rgbf,
@@ -210,10 +221,10 @@ namespace Game {
             for (Int j = 0; j != 10; ++j) {
                 for (Int k = 0; k != 5; ++k) {
                     const std::shared_ptr<GameObject> newBox = _world->createGameObject();
-                    auto collider = newBox->addComponent<Collider>(reinterpret_cast<btCollisionShape*>(&_bBoxShape));
-                    const auto rb = newBox->addComponent<Rigidbody>(1.0f);
+                    //auto collider = newBox->addComponent<Collider>(reinterpret_cast<btCollisionShape*>(&_bBoxShape));
+                    //const auto rb = newBox->addComponent<Rigidbody>(1.0f);
                     newBox->translate({i + 1.0f , j + 5.0f, k + 1.0f});
-                    rb->syncPose();
+                    //rb->syncPose();
                     new ColoredDrawable{
                         *newBox, _boxInstanceData,
                         Color3::fromHsv({hue += 137.5_degf, 0.75f, 0.9f}),
@@ -227,9 +238,16 @@ namespace Game {
         setSwapInterval(1);
         setMinimalLoopPeriod(16.0_msec);
         _timeline.start();
+
+        try {
+            _client->connect("localhost", 5555);
+        }
+        catch (const std::exception &e) {
+            std::cerr << "Failed to connect to server: " << e.what() << std::endl;
+        }
     }
 
-    void GameApp::drawEvent() {
+    void ClientGameApp::drawEvent() {
         GL::defaultFramebuffer.clear(GL::FramebufferClear::Color | GL::FramebufferClear::Depth);
 
         /* Housekeeping: remove any objects which are far away from the origin */
@@ -307,124 +325,31 @@ namespace Game {
         redraw();
     }
 
-    void GameApp::drawUI() const {
-        ImGui::Begin("Serialization Controls");
-
-        if (ImGui::Button("Serialize World")) {
-            std::ofstream os("world_save.dat", std::ios::binary);
-            if (os) {
-                _world->serialize(os);
-                std::cout << "World serialized" << std::endl;
-            } else {
-                std::cerr << "Failed to open file for serialization" << std::endl;
-            }
-        }
-
-        if (ImGui::Button("Deserialize World")) {
-            std::ifstream is("world_save.dat", std::ios::binary);
-            if (is) {
-                _world->deserialize(is);
-                std::cout << "World deserialized" << std::endl;
-            } else {
-                std::cerr << "Failed to open file for deserialization" << std::endl;
-            }
-        }
-
-        ImGui::End();
+    void ClientGameApp::drawUI() const {
     }
 
-
-    void GameApp::keyPressEvent(KeyEvent &event) {
+    void ClientGameApp::keyPressEvent(KeyEvent &event) {
         if(_imgui.handleKeyPressEvent(event)) return;
 
-        /* Movement */
-        if (event.key() == Key::W) {
-            _cameraObject->translate(Vector3::zAxis(-_cameraMoveSpeed));
-        } else if (event.key() == Key::S) {
-            _cameraObject->translate(Vector3::zAxis(_cameraMoveSpeed));
-        } else if (event.key() == Key::A) {
-            _cameraObject->translate(Vector3::xAxis(-_cameraMoveSpeed));
-        } else if (event.key() == Key::D) {
-            _cameraObject->translate(Vector3::xAxis(_cameraMoveSpeed));
-        } else if (event.key() == Key::Q) {
-            _cameraObject->translate(Vector3::yAxis(-_cameraMoveSpeed));
-        } else if (event.key() == Key::E) {
-            _cameraObject->translate(Vector3::yAxis(_cameraMoveSpeed));
-
-            /* Toggling draw modes */
-        } else if (event.key() == Key::R) {
-            if (_drawCubes && _drawDebug) {
-                _drawDebug = false;
-            } else if (_drawCubes && !_drawDebug) {
-                _drawCubes = false;
-                _drawDebug = true;
-            } else if (!_drawCubes && _drawDebug) {
-                _drawCubes = true;
-                _drawDebug = true;
-            }
-
-            /* What to shoot */
-        } else if (event.key() == Key::C) {
-            _shootBox ^= true;
-        } else return;
-
-        event.setAccepted();
+        if (_client) {
+            // Send the key press event as binary data
+            _client->sendInput(MessageType::CLIENT_INPUT, static_cast<int>(event.key()));
+        }
     }
 
-    void GameApp::keyReleaseEvent(KeyEvent &event) {
+    void ClientGameApp::keyReleaseEvent(KeyEvent &event) {
         if(_imgui.handleKeyReleaseEvent(event)) return;
     }
 
-    void GameApp::pointerPressEvent(PointerEvent &event) {
+    void ClientGameApp::pointerPressEvent(PointerEvent &event) {
         if(_imgui.handlePointerPressEvent(event)) return;
-
-        /* Shoot an object on click */
-        if (!event.isPrimary() ||
-            !(event.pointer() & (Pointer::MouseLeft)))
-            return;
-
-        /* First scale the position from being relative to window size to being
-           relative to framebuffer size as those two can be different on HiDPI
-           systems */
-        const Vector2 position = event.position() * Vector2{framebufferSize()} / Vector2{windowSize()};
-        const Vector2 clickPoint = Vector2::yScale(-1.0f) * (position / Vector2{framebufferSize()} - Vector2{0.5f})
-                                   * _camera->projectionSize();
-        const Vector3 direction = (_cameraObject->absoluteTransformation().rotationScaling() * Vector3{
-                                       clickPoint, -1.0f
-                                   }).normalized();
-
-        /* Create a new object */
-        auto newObject = _world->createGameObject();
-        if (_shootBox) {
-            newObject->addComponent<Collider>(reinterpret_cast<btCollisionShape*>(&_bBoxShape));
-
-        }
-        else {
-            newObject->addComponent<Collider>(reinterpret_cast<btCollisionShape*>(&_bSphereShape));
-        }
-        auto rb = newObject->addComponent<Rigidbody>(_shootBox ? 1.0f : 5.0f);
-        newObject->translate(_cameraObject->absoluteTransformation().translation());
-        rb->syncPose();
-
-        /* Create either a box or a sphere */
-        new ColoredDrawable{
-            *newObject,
-            _shootBox ? _boxInstanceData : _sphereInstanceData,
-            _shootBox ? 0x880000_rgbf : 0x220000_rgbf,
-            Matrix4::scaling(Vector3{_shootBox ? 0.5f : 0.25f}), _drawables
-        };
-
-        /* Give it an initial velocity */
-        rb->rigidBody().setLinearVelocity(btVector3{direction * 25.f});
-
-        event.setAccepted();
     }
 
-    void GameApp::pointerReleaseEvent(PointerEvent &event) {
-        if(_imgui.handlePointerReleaseEvent(event)) return;
+    void ClientGameApp::pointerReleaseEvent(PointerEvent &event) {
+        if (_imgui.handlePointerReleaseEvent(event)) return;
     }
 
-    void GameApp::scrollEvent(ScrollEvent &event) {
+    void ClientGameApp::scrollEvent(ScrollEvent &event) {
         if(_imgui.handleScrollEvent(event)) {
             /* Prevent scrolling the page */
             event.setAccepted();
@@ -432,28 +357,15 @@ namespace Game {
         }
     }
 
-    void GameApp::pointerMoveEvent(PointerMoveEvent &event) {
-        if(_imgui.handlePointerMoveEvent(event)) return;
-
-        /* Rotate the camera on mouse drag */
-        if (!event.isPrimary() ||
-            !(event.pointers() & (Pointer::MouseRight)))
-            return;
-
-        Vector2 delta = _cameraRotationSpeed * Vector2{event.relativePosition()};
-
-        _cameraObject->rotateX(Rad{delta.y()});
-        _cameraRig->rotateY(Rad{delta.x()});
-
-        event.setAccepted();
-        redraw();
+    void ClientGameApp::pointerMoveEvent(PointerMoveEvent &event) {
+        if (_imgui.handlePointerMoveEvent(event)) return;
     }
 
-    void GameApp::textInputEvent(TextInputEvent &event) {
+    void ClientGameApp::textInputEvent(TextInputEvent &event) {
         if(_imgui.handleTextInputEvent(event)) return;
     }
 
-    void GameApp::viewportEvent(ViewportEvent &event) {
+    void ClientGameApp::viewportEvent(ViewportEvent &event) {
         GL::defaultFramebuffer.setViewport({{}, event.framebufferSize()});
 
         _imgui.relayout(Vector2{event.windowSize()}/event.dpiScaling(),
@@ -461,4 +373,4 @@ namespace Game {
     }
 }
 
-MAGNUM_APPLICATION_MAIN(Game::GameApp)
+MAGNUM_APPLICATION_MAIN(Game::ClientGameApp)

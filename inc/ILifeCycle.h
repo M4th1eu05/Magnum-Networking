@@ -10,5 +10,6 @@ public:
     virtual void start() {};
     virtual void update() {};
     virtual void stop() {};
+    virtual void destroy() {};
 };
 #endif //LIFECYCLE_H
