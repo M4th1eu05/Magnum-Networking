@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.1/cdn/themes/light.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.1/cdn/shoelace-autoloader.js"></script>
+    <script defer src="/static/js/admin_dashboard.js"></script>
+</head>
+<body>
+    <sl-tab-group placement="start">
+        <sl-tab slot="nav" panel="Servers-panel">Servers</sl-tab>
+        <sl-tab slot="nav" panel="Users">Users</sl-tab>
+        <sl-tab slot="nav" panel="Achievement">Achievement</sl-tab>
+
+
+       <sl-tab-panel name="Servers-panel" x-data="{servers: JSON.parse('{{ .servers }}') } ">
+           <template class="servers-container" x-for="(server, index) in servers" :key="index">
+               <sl-details x-bind:summary="server.ID +' '+ server.ip +':'+ server.port">
+                   <template x-if="server.current_game">
+                       <div>
+                           <p>
+                               <strong>Current Game:</strong>
+                               <h3 x-text="server.current_game.id"></h3>
+                           </p>
+                           <p>
+                               <strong>Players:</strong>
+                               <ul>
+                                   <template x-for="player in server.current_game.Players">
+                                       <li x-text="player.ID+' '+player.name"></li>
+                                   </template>
+                               </ul>
+                           </p>
+                       </div>
+                   </template>
+                   <template x-if="!server.current_game">
+                       <strong>No Game</strong>
+                   </template>
+               </sl-details>
+           </template>
+       </sl-tab-panel>
+        <sl-tab-panel name="Users" x-data="{ users: JSON.parse('{{ .users }}') }">
+            <table class="users-table">
+                <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>UUID</th>
+                    <th>Username</th>
+                    <th>Role</th>
+                </tr>
+                </thead>
+                <tbody>
+                <template x-for="user in users" :key="user.ID">
+                    <tr>
+                        <td x-text="user.ID"></td>
+                        <td x-text="user.UUID"></td>
+                        <td x-text="user.name"></td>
+                        <td x-text="user.role"></td>
+                    </tr>
+                </template>
+                </tbody>
+            </table>
+        </sl-tab-panel>
+
+        <sl-tab-panel name="Achievement" x-data="{ achievements: JSON.parse('{{ .achivements }}') }">
+            <form id="addAchievement" @submit.prevent="">
+                <h3>Add New Achievement</h3>
+                <label>
+                    ID:
+                    <input type="number" name="id" required>
+                </label>
+                <label>
+                    Name:
+                    <input type="text" name="name" required>
+                </label>
+                <label>
+                    Description:
+                    <input type="text" name="description" required>
+                </label>
+                <label>
+                    Condition:
+                    <input type="text" name="condition" required>
+                </label>
+                <label>
+                    Stat Name:
+                    <input type="text" name="stats_name" required>
+                </label>
+                <label>
+                    Threshold:
+                    <input type="text" name="threshold" required>
+                </label>
+                <button onclick="addAchievement()">Add</button>
+                <button onclick="updateAchievement()">Update</button>
+            </form>
+
+            <table>
+                <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Description</th>
+                    <th>Condition</th>
+                    <th>Stats Name</th>
+                    <th>Threshold</th>
+                </tr>
+                </thead>
+                <tbody>
+                <template x-for="achievement in achievements" :key="achievement.ID">
+                    <tr>
+                        <td x-text="achievement.ID"></td>
+                        <td x-text="achievement.name"></td>
+                        <td x-text="achievement.description"></td>
+                        <td x-text="achievement.condition"></td>
+                        <td x-text="achievement.statsName"></td>
+                        <td x-text="achievement.threshold"></td>
+                        <td>
+                            <button @click="deleteAchievement(achievement.ID)">Delete</button>
+                        </td>
+                    </tr>
+                </template>
+                </tbody>
+            </table>
+        </sl-tab-panel>
+    </sl-tab-group>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        document.cookie = "receivedToken={{ .token }}";
+    })
+</script>
+</body>
+</html>
