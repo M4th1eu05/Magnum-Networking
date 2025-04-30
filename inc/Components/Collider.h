@@ -6,9 +6,8 @@
 #include <Components/BaseComponent.h>
 #include <memory>
 
-#include "../../cmake-build-debug/_deps/bullet-src/src/BulletCollision/CollisionShapes/btCollisionShape.h"
-#include "BulletCollision/CollisionShapes/btBoxShape.h"
-#include "BulletCollision/CollisionShapes/btSphereShape.h"
+#include "BulletCollision/CollisionShapes/btCollisionShape.h"
+
 
 class Collider : public BaseComponent {
 public:
