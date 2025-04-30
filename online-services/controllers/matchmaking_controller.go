@@ -2,13 +2,15 @@ package controllers
 
 import (
 	"fmt"
-	"github.com/google/uuid"
-	"gorm.io/gorm/clause"
 	"log"
 	"net/http"
 	"online-services/database"
 	"online-services/models"
+	"sort"
 	"sync"
+
+	"github.com/google/uuid"
+	"gorm.io/gorm/clause"
 
 	"github.com/gin-gonic/gin"
 )
@@ -67,9 +69,14 @@ func (q *MatchmakingQueue) StartMatchmaking(matchSize int, matchHandler func([]m
 				q.cond.Wait()
 			}
 
-			matchPlayers := make([]models.User, matchSize)
-			copy(matchPlayers, q.players[:matchSize])
+			sort.Slice(q.players, func(i, j int) bool {
+				return q.players[i].SkillLevel < q.players[j].SkillLevel
+			})
+
+			var matchPlayers []models.User
+			matchPlayers = q.players[:matchSize]
 			q.players = q.players[matchSize:]
+
 			q.Unlock()
 
 			// Handle the match

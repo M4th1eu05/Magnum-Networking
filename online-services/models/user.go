@@ -14,6 +14,7 @@ type User struct {
 	Stats        []Stat        `json:"stats" gorm:"constraint:OnDelete:CASCADE"`
 	Achievements []Achievement `json:"achievements" gorm:"many2many:user_achievements;constraint:OnDelete:CASCADE"`
 	GameID       *uint         `json:"game_id" gorm:"constraint:OnDelete:SET NULL;default:null"`
+	SkillLevel   int           `json:"skill_level" gorm:"default:0"`
 }
 
 func (u *User) BeforeCreate(tx *gorm.DB) (err error) {
