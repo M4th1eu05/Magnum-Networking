@@ -7,6 +7,7 @@ enum class MessageType {
     UPDATE_GAMEOBJECT,
     DELETE_GAMEOBJECT,
     UPDATE_WORLD,
+    CLIENT_INPUT
 };
 
 #endif // MESSAGETYPE_H

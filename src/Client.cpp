@@ -124,3 +124,18 @@ void Client::updateWorldFromServer(const std::string& serializedData) const {
         std::cerr << "Failed to update world from server: " << e.what() << std::endl;
     }
 }
+
+void Client::sendInput(MessageType messageType, const int keyCode) {
+    if (!_connected || !_peer) return;
+
+    // Serialize the message type and key code into a binary stream
+    std::ostringstream oss(std::ios::binary);
+    int messageTypeInt = static_cast<int>(messageType);
+    oss.write(reinterpret_cast<const char*>(&messageTypeInt), sizeof(messageTypeInt));
+    oss.write(reinterpret_cast<const char*>(&keyCode), sizeof(keyCode));
+
+    // Create and send the packet
+    const std::string& binaryData = oss.str();
+    ENetPacket* packet = enet_packet_create(binaryData.data(), binaryData.size(), ENET_PACKET_FLAG_RELIABLE);
+    enet_peer_send(_peer, 0, packet);
+}

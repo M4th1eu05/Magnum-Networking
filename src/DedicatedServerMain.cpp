@@ -158,7 +158,6 @@ namespace Game {
         }
 
         _server = std::make_shared<DedicatedServer>(5555, 4);
-        _server->start();
 
         _world = std::make_shared<World>(_timeline);
         _world->setServer(_server);
@@ -244,6 +243,8 @@ namespace Game {
         setSwapInterval(1);
         setMinimalLoopPeriod(16.0_msec);
         _timeline.start();
+
+        _server->start();
     }
 
     void ServerGameApp::drawEvent() {

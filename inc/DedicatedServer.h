@@ -21,6 +21,8 @@ public:
     void broadcastMessage(MessageType messageType, const std::string& data) const;
     void broadcastWorld(const World &world) const;
 
+    void processInput(const char *data, size_t dataLength);
+
 private:
     void serverLoop();
 

@@ -9,6 +9,7 @@
 #include <atomic>
 #include <memory>
 
+#include "MessageType.h"
 #include "World.h"
 
 class Client {
@@ -23,6 +24,8 @@ public:
     void sendMessage(const std::string& message);
 
     void updateWorldFromServer(const std::string &serializedData) const;
+
+    void sendInput(MessageType messageType, int keyCode);
 
     void setWorld(const std::shared_ptr<World> &world) {
         _world = world;

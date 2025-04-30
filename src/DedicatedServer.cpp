@@ -56,6 +56,9 @@ void DedicatedServer::serverLoop() {
     while (_running) {
         ENetEvent event;
         while (enet_host_service(_server, &event, 1000) > 0) {
+            std::string message;
+            size_t delimiter;
+
             switch (event.type) {
                 case ENET_EVENT_TYPE_CONNECT:
                     std::cout << "Client connected." << std::endl;
@@ -64,6 +67,19 @@ void DedicatedServer::serverLoop() {
                 case ENET_EVENT_TYPE_RECEIVE:
                     std::cout << "Message received: "
                               << reinterpret_cast<char*>(event.packet->data) << std::endl;
+
+                    message = std::string(reinterpret_cast<char*>(event.packet->data), event.packet->dataLength);
+                    delimiter = message.find(':');
+                    if (delimiter != std::string::npos) {
+                        int messageTypeInt = std::stoi(message.substr(0, delimiter));
+                        MessageType messageType = static_cast<MessageType>(messageTypeInt);
+                        std::string data = message.substr(delimiter + 1);
+
+                        if (messageType == MessageType::CLIENT_INPUT) {
+                            std::cout << "Received input: " << data << std::endl;
+                            // Add logic to handle the input
+                        }
+                    }
                     enet_packet_destroy(event.packet);
                     break;
 
@@ -115,4 +131,20 @@ void DedicatedServer::broadcastWorld(const World& world) const {
     // Broadcast the packet to all connected peers
     enet_host_broadcast(_server, 0, packet);
     enet_host_flush(_server);
+}
+
+void DedicatedServer::processInput(const char* data, const size_t dataLength) {
+    std::istringstream iss(std::string(data, dataLength), std::ios::binary);
+
+    // Deserialize the message type and key code
+    int messageTypeInt;
+    int keyCode;
+    iss.read(reinterpret_cast<char*>(&messageTypeInt), sizeof(messageTypeInt));
+    iss.read(reinterpret_cast<char*>(&keyCode), sizeof(keyCode));
+
+    MessageType messageType = static_cast<MessageType>(messageTypeInt);
+    if (messageType == MessageType::CLIENT_INPUT) {
+        std::cout << "Received input: KeyCode=" << keyCode << std::endl;
+        // Handle the input
+    }
 }

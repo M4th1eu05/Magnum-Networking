@@ -155,12 +155,6 @@ namespace Game {
 
         _world = std::make_shared<World>(_timeline);
         _client = std::make_shared<Client>();
-        try {
-            _client->connect("localhost", 5555);
-        }
-        catch (const std::exception &e) {
-            std::cerr << "Failed to connect to server: " << e.what() << std::endl;
-        }
         _client->setWorld(_world);
 
         /* Camera setup */
@@ -244,6 +238,13 @@ namespace Game {
         setSwapInterval(1);
         setMinimalLoopPeriod(16.0_msec);
         _timeline.start();
+
+        try {
+            _client->connect("localhost", 5555);
+        }
+        catch (const std::exception &e) {
+            std::cerr << "Failed to connect to server: " << e.what() << std::endl;
+        }
     }
 
     void ClientGameApp::drawEvent() {
@@ -329,6 +330,11 @@ namespace Game {
 
     void ClientGameApp::keyPressEvent(KeyEvent &event) {
         if(_imgui.handleKeyPressEvent(event)) return;
+
+        if (_client) {
+            // Send the key press event as binary data
+            _client->sendInput(MessageType::CLIENT_INPUT, static_cast<int>(event.key()));
+        }
     }
 
     void ClientGameApp::keyReleaseEvent(KeyEvent &event) {
