@@ -20,7 +20,14 @@ set_directory_properties(PROPERTIES CORRADE_USE_PEDANTIC_FLAGS ON)
 
 include(FetchContent)
 
+# Fetch enet6
+FetchContent_Declare(
+        enet6
+        GIT_REPOSITORY https://github.com/SirLynix/enet6.git
+        GIT_TAG main # Replace with a specific tag or commit if needed
+)
 
+FetchContent_MakeAvailable(enet6)
 
 #add_executable(MagnumBootstrap
 #        src/main.cpp
@@ -34,12 +41,12 @@ include(FetchContent)
 #        src/Components/Collider.cpp
 #        inc/Components/Collider.h
 #)
-
-
+#
+#
 #target_include_directories(MagnumBootstrap PUBLIC inc inc/Components)
 #target_include_directories(MagnumBootstrap PUBLIC inc inc ${enet6_SOURCE_DIR}/include)
-
-
+#
+#
 #set_property(TARGET MagnumBootstrap PROPERTY CXX_STANDARD 20)
 #target_link_libraries(MagnumBootstrap PRIVATE
 #        Magnum::Application
