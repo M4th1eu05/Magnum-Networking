@@ -2,7 +2,6 @@
 
 #include <sstream>
 
-#include "APIHandler.h"
 #include "World.h"
 
 DedicatedServer::DedicatedServer(const uint16_t port, const size_t maxClients) {
@@ -25,8 +24,6 @@ DedicatedServer::DedicatedServer(const uint16_t port, const size_t maxClients) {
     char addressString[65];
     enet_address_get_host(&_address, addressString, sizeof(addressString));
     std::cout << "Server address: " << addressString << ":" << port << std::endl;
-
-    _apiHandler = APIHandler();
 }
 
 DedicatedServer::~DedicatedServer() {
