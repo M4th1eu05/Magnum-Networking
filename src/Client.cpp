@@ -2,6 +2,8 @@
 
 #include <sstream>
 
+#include "MessageType.h"
+
 Client::Client(){
     if (enet_initialize() != 0) {
         throw std::runtime_error("Failed to initialize ENet.");
@@ -75,16 +77,34 @@ void Client::clientLoop() {
         ENetEvent event;
         while (enet_host_service(_client, &event, 1000) > 0) {
             switch (event.type) {
-                case ENET_EVENT_TYPE_RECEIVE:
-                    std::cout << "Message from server: "
-                              << reinterpret_cast<char*>(event.packet->data) << std::endl;
+                case ENET_EVENT_TYPE_RECEIVE: {
+                    std::string message(reinterpret_cast<char*>(event.packet->data), event.packet->dataLength);
+                    size_t delimiter = message.find(':');
+                    if (delimiter != std::string::npos) {
+                        int messageTypeInt = std::stoi(message.substr(0, delimiter));
+                        MessageType messageType = static_cast<MessageType>(messageTypeInt);
+                        std::string data = message.substr(delimiter + 1);
 
-                    if (_world) {
-                        updateWorldFromServer(std::string(reinterpret_cast<char*>(event.packet->data), event.packet->dataLength));
+                        switch (messageType) {
+                            case MessageType::CREATE_GAMEOBJECT:
+                                if (_world) {
+                                    std::istringstream iss(data);
+                                    auto newObject = _world->createGameObject();
+                                    newObject->deserialize(iss);
+                                }
+                                break;
+
+                            case MessageType::UPDATE_WORLD:
+                                if (_world) {
+                                    updateWorldFromServer(data);
+                                }
+                            default:
+                                break;
+                        }
                     }
                     enet_packet_destroy(event.packet);
                     break;
-
+                }
                 default:
                     break;
             }
@@ -96,5 +116,10 @@ void Client::updateWorldFromServer(const std::string& serializedData) const {
     if (!_world) return;
 
     std::istringstream iss(serializedData);
-    _world->deserialize(iss);
+    try {
+        _world->deserialize(iss);
+    }
+    catch (const std::exception& e) {
+        std::cerr << "Failed to update world from server: " << e.what() << std::endl;
+    }
 }

@@ -108,6 +108,7 @@ add_executable(DedicatedServer
         inc/Components/Collider.h
         src/APIHandler.cpp
         inc/APIHandler.h
+        inc/MessageType.h
 )
 
 target_include_directories(DedicatedServer PUBLIC inc ${enet6_SOURCE_DIR}/include)
@@ -150,6 +151,8 @@ add_executable(Client
         inc/Components/Collider.h
         src/APIHandler.cpp
         inc/APIHandler.h
+        inc/MessageType.h
+        src/DedicatedServer
 )
 
 target_include_directories(Client PUBLIC inc ${enet6_SOURCE_DIR}/include)

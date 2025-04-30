@@ -94,7 +94,21 @@ void DedicatedServer::serverLoop() {
     }
 }
 
-// DedicatedServer.cpp
+void DedicatedServer::broadcastMessage(MessageType messageType, const std::string& data) const {
+    if (!_server) return;
+
+    // Serialize the message type as an integer
+    int messageTypeInt = static_cast<int>(messageType);
+    const std::string message = std::to_string(messageTypeInt) + ":" + data;
+
+    // Create an ENet packet
+    ENetPacket* packet = enet_packet_create(message.data(), message.size(), ENET_PACKET_FLAG_RELIABLE);
+
+    // Broadcast the packet to all connected peers
+    enet_host_broadcast(_server, 0, packet);
+    enet_host_flush(_server);
+}
+
 void DedicatedServer::broadcastWorld(const World& world) const {
     if (!_server) return;
 
@@ -103,8 +117,12 @@ void DedicatedServer::broadcastWorld(const World& world) const {
     world.serialize(oss);
     const std::string serializedData = oss.str();
 
+    // Serialize the message type as an integer
+    int messageTypeInt = static_cast<int>(MessageType::UPDATE_WORLD);
+    const std::string message = std::to_string(messageTypeInt) + ":" + serializedData;
+
     // Create an ENet packet
-    ENetPacket* packet = enet_packet_create(serializedData.data(), serializedData.size(), ENET_PACKET_FLAG_RELIABLE);
+    ENetPacket* packet = enet_packet_create(message.data(), message.size(), ENET_PACKET_FLAG_RELIABLE);
 
     // Broadcast the packet to all connected peers
     enet_host_broadcast(_server, 0, packet);

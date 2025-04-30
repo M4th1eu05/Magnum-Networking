@@ -7,6 +7,7 @@
 #include <thread>
 #include <atomic>
 
+#include "MessageType.h"
 #include "APIHandler.h"
 #include "World.h"
 
@@ -18,6 +19,7 @@ public:
     void start();
     void stop();
 
+    void broadcastMessage(MessageType messageType, const std::string& data) const;
     void broadcastWorld(const World &world) const;
 
 private:
